@@ -43,7 +43,7 @@ class PackageTester:
         visual.get_directions().to_csv(RECORDING_PATH+"Vectors"+time_str+".csv")
         print("Vectors saved...")
 
-        visual.loss_landscape(scale=2, width=10, height=10).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
+        visual.loss_landscape(scale=3, width=100, height=100).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
 # trajectory = pd.DataFrame(columns=["x", "y", "loss", "epoch", "participant"])
@@ -97,4 +97,4 @@ class PackageTester:
 
 if __name__ == '__main__':
     test = PackageTester()
-    test.verify_accuracy()
+    test.draw_landscape()
