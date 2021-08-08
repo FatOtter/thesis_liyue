@@ -1,6 +1,6 @@
 import torch
 import torchvision
-from clean_version.__init__ import *
+from __init__ import *
 
 
 class DataDistributor:

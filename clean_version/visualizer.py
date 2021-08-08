@@ -1,5 +1,5 @@
-from clean_version.__init__ import *
-from clean_version.shallow_cnn import ShallowCNN
+from __init__ import *
+from shallow_cnn import ShallowCNN
 import torch
 import math
 import pandas as pd

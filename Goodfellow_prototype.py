@@ -149,7 +149,7 @@ class Visualizer:
 
 
 
-path = RECORDING_PATH+"Params2021_07_31_14.csv"
+path = RECORDING_PATH+"anchor.csv"
 column = 'epoch{}'.format(EPOCH)
 
 visual1 = Visualizer(test_data)

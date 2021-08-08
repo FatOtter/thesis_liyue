@@ -1,7 +1,7 @@
 import torch
 import pandas as pd
 from torch.utils.data import DataLoader
-from clean_version.__init__ import *
+from __init__ import *
 
 
 class ShallowCNN(torch.nn.Module):

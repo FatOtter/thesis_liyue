@@ -1,8 +1,8 @@
 from datetime import datetime
 
-RECORDING_PATH = "../trainig_records/"
-DATA_SET_PATH = "../mnist"
-PARAMETER_FILE = "Params2021_07_31_14.csv"
+RECORDING_PATH = "records/"
+DATA_SET_PATH = "mnist"
+PARAMETER_FILE = "anchor.csv"
 MAX_EPOCH = 5
 DEFAULT_BATCH_SIZE = 64
 PARTICIPANTS = 10

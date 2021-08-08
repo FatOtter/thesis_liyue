@@ -1,8 +1,8 @@
-from clean_version.shallow_cnn import ShallowCNN
-from clean_version.data_distributor import DataDistributor
-from clean_version.visualizer import Visualizer
+from shallow_cnn import ShallowCNN
+from data_distributor import DataDistributor
+from visualizer import Visualizer
 import pandas as pd
-from clean_version.__init__ import *
+from __init__ import *
 import torch
 
 
@@ -36,7 +36,7 @@ class PackageTester:
     def draw_landscape(self):
         visual = self.visual
         anchor = self.anchor
-        to_load = pd.read_csv(RECORDING_PATH+"Params2021_07_31_14.csv")
+        to_load = pd.read_csv("anchor.csv")
 
         anchor.load_parameters(to_load, "epoch4", 1)
         visual.set_anchor(anchor)
@@ -65,7 +65,7 @@ class PackageTester:
         anchor = self.anchor
         dist = self.distributor
         # new_params = pd.read_csv(RECORDING_PATH+"Parameters2021_08_04_00.csv")
-        to_load = pd.read_csv(RECORDING_PATH+"Params2021_07_31_14.csv")
+        to_load = pd.read_csv(RECORDING_PATH+"anchor.csv")
         anchor.load_parameters(to_load, "epoch4", 1)
         visual = self.visual
         visual.scale = 2
@@ -78,7 +78,7 @@ class PackageTester:
 # anchor = ShallowCNN()
 # dist = DataDistributor(number_of_participants=1)
 # new_params = pd.read_csv(RECORDING_PATH+"Parameters2021_08_04_00.csv")
-# # to_load = pd.read_csv(RECORDING_PATH+"Params2021_07_31_14.csv")
+# # to_load = pd.read_csv(RECORDING_PATH+"anchor.csv")
 # anchor.load_parameters(new_params, "epoch5_participant1")
 # visual = Visualizer(dist.test_set)
 # visual.scale = 2.5

@@ -18,7 +18,7 @@ test_data = torchvision.datasets.MNIST("./mnist", False, transform)
 loss_func = torch.nn.CrossEntropyLoss()
 
 RECORDING_PATH = "./trainig_records/"
-df = pd.read_csv(RECORDING_PATH+"Params2021_07_31_14.csv")
+df = pd.read_csv(RECORDING_PATH+"anchor.csv")
 
 
 class ModelLoader:
@@ -57,7 +57,7 @@ class ModelLoader:
 # print(current_index, len(df['epoch1']))
 
 loader = ModelLoader()
-model = loader.load(RECORDING_PATH+"Params2021_07_31_14.csv", 'epoch{}'.format(EPOCH))
+model = loader.load(RECORDING_PATH+"anchor.csv", 'epoch{}'.format(EPOCH))
 
 loss_accumulator = 0
 acc_accumulator = 0
