@@ -2,7 +2,7 @@ import torch
 import pandas as pd
 import torchvision
 from torch.utils.data.dataloader import DataLoader
-from model_shallow_cnn import ShallowCNN
+from playground.model_shallow_cnn import ShallowCNN
 
 EPOCH = 0
 
