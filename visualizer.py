@@ -23,6 +23,7 @@ class Visualizer:
         # The random vectors used to generate plots
         self.random_vec1 = ShallowCNN()
         self.random_vec2 = ShallowCNN()
+        self.vec_tensor = torch.empty(1)
 
         # The data used for plotting
         self.temp_model.set_test_data(data)
@@ -46,7 +47,7 @@ class Visualizer:
         Initialize the current loss_map values
         :return: None
         """
-        self.loss_map = {'alpha': [], 'beta': [], 'loss': []}
+        self.loss_map = {'alpha': [], 'beta': [], 'loss': [], 'x': [], 'y': []}
 
     def Goodfellow_approach(self, theta1=None, theta2=None, scale=1.2, filter_normalization=False, resolution=100,
                             print_progress=False):
@@ -107,7 +108,8 @@ class Visualizer:
         return result
 
     def loss_landscape(self, anchor=None, theta1=None, theta2=None, width=None, height=None, scale=None,
-                       filter_normalization=True, print_progress=True, anchor_difference=True, record_parameters=False):
+                       filter_normalization=True, print_progress=True, anchor_difference=True,
+                       record_parameters=False, direction_vec_normalization=False):
         """
         Generate the data for loss landscape over the two directions defined by theta1 and theta2. If not given then use
         random initialization.
@@ -121,6 +123,7 @@ class Visualizer:
         :param print_progress: True to print the current progress, False will not
         :param anchor_difference: True if subtract the parameter value from anchor when calculating current point
         :param record_parameters: True to generate a csv file containing parameters each sampled point
+        :param direction_vec_normalization: True to apply normalization for direction vectors
         :return: pandas.DataFrame object containing the loss landscape data
         """
 
@@ -135,6 +138,10 @@ class Visualizer:
                 self.random_vec2 = theta2
             else:
                 raise TypeError("Theta2 is not a valid instance of model")
+        self.vec_tensor = torch.cat((self.random_vec1.get_flatten_parameter(),
+                                     self.random_vec2.get_flatten_parameter()))
+        self.vec_tensor = self.vec_tensor.reshape(self.random_vec2.get_flatten_parameter().size()[0], -1)
+        print("The direction vector size: {}".format(self.vec_tensor.size()))
         if anchor is not None:
             self.set_anchor(anchor)
         if self.anchor is None:
@@ -159,13 +166,24 @@ class Visualizer:
 
                 # Call the helper function to load parameters
                 self._load_parameters_to_temp(alpha_factor, beta_factor, anchor_params, param1, param2,
-                                              anchor_difference, filter_normalization)
+                                              anchor_difference, filter_normalization, direction_vec_normalization)
                 loss = self.temp_model.get_test_outcome()
-                self.loss_map['alpha'].append(alpha)
-                self.loss_map['beta'].append(beta)
+
+                # Get the axis according to matrix multiplication
+                axis = torch.matmul(self.temp_model.get_flatten_parameter(), self.vec_tensor)
+                x = axis[0].item()
+                y = axis[1].item()
+
+                # Record the values
+                self.loss_map['alpha'].append(alpha_factor)
+                self.loss_map['beta'].append(beta_factor)
                 self.loss_map['loss'].append(loss)
+                self.loss_map['x'].append(x)
+                self.loss_map['y'].append(y)
                 if print_progress:
-                    print("Alpha: {}, Beta:{}, Loss:{} ...".format(alpha, beta, loss))
+                    print("Alpha: {}, Beta:{}, X={}, Y={}, Loss:{} ...".format(alpha, beta, x, y, loss))
+
+                # Save the parameters if necessary
                 if record_parameters:
                     parameter_data[(alpha, beta)] = self.temp_model.get_flatten_parameter().detach().numpy()
         if record_parameters:
@@ -174,7 +192,7 @@ class Visualizer:
         return pd.DataFrame(self.loss_map)
 
     def _load_parameters_to_temp(self, alpha_factor, beta_factor, anchor_params, param1, param2,
-                                 anchor_difference, filter_normalization):
+                                 anchor_difference, filter_normalization, direction_vector_normalization):
         """
         Load alpha and beta factors, calculate the current theta under given alpha and beta, to generate a temp model
         with given alpha and beta.
@@ -195,8 +213,9 @@ class Visualizer:
                              + beta_factor * vec2
             else:
                 # Add filter normalization before visualization
-                # vec1 = vec1 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec1)
-                # vec2 = vec2 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec2)
+                if direction_vector_normalization:
+                    vec1 = vec1 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec1)
+                    vec2 = vec2 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec2)
                 temp_param = anchor_param + alpha_factor * vec1 + beta_factor * vec2
                 temp_param = temp_param * torch.linalg.norm(anchor_param) / torch.linalg.norm(temp_param)
             with torch.no_grad():
@@ -303,3 +322,30 @@ class Visualizer:
         distance = self.get_distance_to_anchor(self.temp_model)
         norm = self.temp_model.get_parameter_norm()
         return loss, acc, distance, norm
+
+    def init_pca(self, df: pd.DataFrame, x_start=1, y_start=1, anchor_idx=-1):
+        """
+        Initialize the direction with PCA applied to the input data frame as a trajectory file
+        """
+        # Load the input data frame as a tensor
+        trajectory = torch.tensor(df.to_numpy()[x_start:, y_start:])
+        trajectory = trajectory.transpose(0, 1)
+        anchor = trajectory[anchor_idx]
+
+        # Load anchor
+        anchor_df = pd.DataFrame(anchor.numpy())
+        self.anchor = ShallowCNN()
+        self.anchor.load_parameters(anchor_df, 0)
+
+        # Make difference of the trajectory with the defined anchor (usually final epoch parameters)
+        trajectory -= anchor
+        trajectory = trajectory[:anchor_idx]
+        trajectory = trajectory.transpose(0, 1)
+
+        # Conduct PCA process
+        u, s, v = torch.pca_lowrank(trajectory)
+        self.vec_tensor = u[:, :2]
+        print("The calculated vector size: {}".format(self.vec_tensor.size()))
+        selected_directions = pd.DataFrame(self.vec_tensor.numpy())
+        self.random_vec1.load_parameters(selected_directions, 0)
+        self.random_vec2.load_parameters(selected_directions, 1)
