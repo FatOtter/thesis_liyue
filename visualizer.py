@@ -323,14 +323,14 @@ class Visualizer:
         norm = self.temp_model.get_parameter_norm()
         return loss, acc, distance, norm
 
-    def init_pca(self, df: pd.DataFrame, x_start=1, y_start=1, anchor_idx=-1):
+    def init_pca(self, df: pd.DataFrame, x_start=0, y_start=1, anchor_idx=-1):
         """
         Initialize the direction with PCA applied to the input data frame as a trajectory file
         """
         # Load the input data frame as a tensor
         trajectory = torch.tensor(df.to_numpy()[x_start:, y_start:])
         trajectory = trajectory.transpose(0, 1)
-        anchor = trajectory[anchor_idx]
+        anchor = torch.clone(trajectory[anchor_idx])
 
         # Load anchor
         anchor_df = pd.DataFrame(anchor.numpy())
@@ -349,3 +349,4 @@ class Visualizer:
         selected_directions = pd.DataFrame(self.vec_tensor.numpy())
         self.random_vec1.load_parameters(selected_directions, 0)
         self.random_vec2.load_parameters(selected_directions, 1)
+
