@@ -107,7 +107,7 @@ class Visualizer:
         return result
 
     def loss_landscape(self, anchor=None, theta1=None, theta2=None, width=None, height=None, scale=None,
-                       filter_normalization=True, print_progress=True):
+                       filter_normalization=True, print_progress=True, anchor_difference=True, record_parameters=False):
         """
         Generate the data for loss landscape over the two directions defined by theta1 and theta2. If not given then use
         random initialization.
@@ -119,6 +119,8 @@ class Visualizer:
         :param scale: The scale of this landscape, indicating how far landscape will go over the given directions
         :param filter_normalization: True to apply filter normalization, False will not
         :param print_progress: True to print the current progress, False will not
+        :param anchor_difference: True if subtract the parameter value from anchor when calculating current point
+        :param record_parameters: True to generate a csv file containing parameters each sampled point
         :return: pandas.DataFrame object containing the loss landscape data
         """
 
@@ -144,6 +146,7 @@ class Visualizer:
             self.height = height
         if scale is not None:
             self.scale = scale
+        parameter_data = {}
 
         # Iterate to sampling space
         for alpha in range(self.width):
@@ -153,29 +156,51 @@ class Visualizer:
                 param1 = self.random_vec1.parameters()
                 param2 = self.random_vec2.parameters()
                 anchor_params = self.anchor.parameters()
-                for param in self.temp_model.parameters():
-                    anchor_param = next(anchor_params)
-                    if not filter_normalization:
-                        # The version without filter normalization
-                        temp_param = anchor_param + alpha_factor * (next(param1) - anchor_param) \
-                                     + beta_factor * (next(param2) - anchor_param)
-                    else:
-                        # Add filter normalization before visualization
-                        vec1 = next(param1) - anchor_param
-                        vec1 = vec1 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec1)
-                        vec2 = next(param2) - anchor_param
-                        vec2 = vec2 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec2)
-                        temp_param = anchor_param + alpha_factor * vec1 + beta_factor * vec2
-                        temp_param = temp_param * torch.linalg.norm(anchor_param) / torch.linalg.norm(temp_param)
-                    with torch.no_grad():
-                        param.copy_(temp_param)
+
+                # Call the helper function to load parameters
+                self._load_parameters_to_temp(alpha_factor, beta_factor, anchor_params, param1, param2,
+                                              anchor_difference, filter_normalization)
                 loss = self.temp_model.get_test_outcome()
                 self.loss_map['alpha'].append(alpha)
                 self.loss_map['beta'].append(beta)
                 self.loss_map['loss'].append(loss)
                 if print_progress:
                     print("Alpha: {}, Beta:{}, Loss:{} ...".format(alpha, beta, loss))
+                if record_parameters:
+                    parameter_data[(alpha, beta)] = self.temp_model.get_flatten_parameter().detach().numpy()
+        if record_parameters:
+            parameter_df = pd.DataFrame(parameter_data)
+            parameter_df.to_csv(RECORDING_PATH+"PCA_parameters_"+time_str+".csv")
         return pd.DataFrame(self.loss_map)
+
+    def _load_parameters_to_temp(self, alpha_factor, beta_factor, anchor_params, param1, param2,
+                                 anchor_difference, filter_normalization):
+        """
+        Load alpha and beta factors, calculate the current theta under given alpha and beta, to generate a temp model
+        with given alpha and beta.
+        Instruction of parameters in above loss_landscape function
+        """
+        for param in self.temp_model.parameters():
+            anchor_param = next(anchor_params)
+            # Check if make difference with anchor
+            if anchor_difference:
+                vec1 = next(param1) - anchor_param
+                vec2 = next(param2) - anchor_param
+            else:
+                vec1 = next(param1)
+                vec2 = next(param2)
+            if not filter_normalization:
+                # The version without filter normalization
+                temp_param = anchor_param + alpha_factor * vec1 \
+                             + beta_factor * vec2
+            else:
+                # Add filter normalization before visualization
+                # vec1 = vec1 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec1)
+                # vec2 = vec2 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec2)
+                temp_param = anchor_param + alpha_factor * vec1 + beta_factor * vec2
+                temp_param = temp_param * torch.linalg.norm(anchor_param) / torch.linalg.norm(temp_param)
+            with torch.no_grad():
+                param.copy_(temp_param)
 
     def set_anchor(self, anchor: ShallowCNN):
         """
@@ -258,7 +283,7 @@ class Visualizer:
         self.random_vec1.load_parameters(data, "vec1")
         self.random_vec1.load_parameters(data, "vec2")
 
-    def get_loss_at_axis(self, alpha: int, beta: int, filter_normalization=True):
+    def get_loss_at_axis(self, alpha: int, beta: int, filter_normalization=True, anchor_difference=True):
         """
         Get the loss value (and accuracy) at a given point
         :param alpha: the alpha axis on the plot
@@ -272,24 +297,8 @@ class Visualizer:
         param1 = self.random_vec1.parameters()
         param2 = self.random_vec2.parameters()
         anchor_params = self.anchor.parameters()
-        for param in self.temp_model.parameters():
-            anchor_param = next(anchor_params)
-            if not filter_normalization:
-                # The version without filter normalization
-                temp_param = anchor_param + alpha_factor * (next(param1) - anchor_param) \
-                             + beta_factor * (next(param2) - anchor_param)
-            else:
-                # Add filter normalization before visualization
-                vec1 = next(param1) - anchor_param
-                # vec1 = vec1 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec1)
-                vec2 = next(param2) - anchor_param
-                # vec2 = vec2 * torch.linalg.norm(anchor_param) / torch.linalg.norm(vec2)
-                temp_param = anchor_param + alpha_factor * vec1 + beta_factor * vec2
-                # temp_param = temp_param * torch.linalg.norm(anchor_param) / torch.linalg.norm(temp_param)
-                for i in range(temp_param.size()[0]):
-                    temp_param[i] = temp_param[i] * torch.linalg.norm(anchor_param[i]) / torch.linalg.norm(temp_param[i])
-            with torch.no_grad():
-                param.copy_(temp_param)
+        self._load_parameters_to_temp(alpha_factor, beta_factor, anchor_params, param1, param2,
+                                      anchor_difference, filter_normalization)
         loss, acc = self.temp_model.get_test_outcome(True)
         distance = self.get_distance_to_anchor(self.temp_model)
         norm = self.temp_model.get_parameter_norm()

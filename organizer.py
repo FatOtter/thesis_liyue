@@ -46,20 +46,20 @@ class PackageTester:
         visual.loss_landscape(scale=1, width=3, height=3).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
-# trajectory = pd.DataFrame(columns=["x", "y", "loss", "epoch", "participant"])
-# for j in range(PARTICIPANTS):
-#     models[j].set_test_data(distributor.test_set)
-# print("Test data reset complete...")
-#
-# for i in range(MAX_EPOCH+1):
-#     for j in range(PARTICIPANTS):
-#         models[j].load_parameters(recorder, "epoch{}_participant{}".format(i, j))
-#         x, y = visual.get_projection(models[i])
-#         loss = models[i].get_test_outcome()
-#         trajectory.loc[len(trajectory)] = x, y, loss, i, j
-#         print("Epoch {}, participant {}, x={}, y={}, loss={}".format(i, j, x, y, loss))
-# trajectory.to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")
-# print("Trajectory saving complete...")
+    def landscape_pca(self):
+        visual = self.visual
+        anchor = self.anchor
+        to_load = pd.read_csv("anchor.csv")
+        anchor.load_parameters(to_load, "epoch4", 1)
+        visual.set_anchor(anchor)
+        to_load = pd.read_csv("pca_diff.csv")
+        theta1 = ShallowCNN()
+        theta2 = ShallowCNN()
+        theta1.load_parameters(to_load, "0")
+        theta2.load_parameters(to_load, "1")
+        visual.loss_landscape(scale=6, width=30, height=30, theta1=theta1, theta2=theta2, anchor_difference=False,
+                              record_parameters=True).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
+        print("Loss landscape generated...")
 
     def verify_accuracy(self):
         anchor = self.anchor
@@ -75,28 +75,11 @@ class PackageTester:
                 loss, acc, distance, norm = visual.get_loss_at_axis(i, j)
                 print("x={}, y={}, loss={}, acc={}, distance={}, norm={}".format(i, j, loss, acc, distance, norm))
 
-# anchor = ShallowCNN()
-# dist = DataDistributor(number_of_participants=1)
-# new_params = pd.read_csv(RECORDING_PATH+"Parameters2021_08_04_00.csv")
-# # to_load = pd.read_csv(RECORDING_PATH+"anchor.csv")
-# anchor.load_parameters(new_params, "epoch5_participant1")
-# visual = Visualizer(dist.test_set)
-# visual.scale = 2.5
-# visual.set_anchor(anchor)
-# print("Anchor norm: {}".format(anchor.get_parameter_norm()))
-# for i in range(6):
-#     model = ShallowCNN()
-#     model.set_test_data(dist.test_set)
-#     model.confined_init(anchor)
-#     x, y = visual.get_projection(model)
-#     loss = model.get_test_outcome()
-#     distance = visual.get_distance_to_anchor(model)
-#     norm = model.get_parameter_norm()
-#     print("MODEL {}: x={}, y={}, loss={}, distance to anchor: {}, norm={}".format(i, x, y, loss, distance, norm))
+
 
 
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.draw_landscape()
+    test.landscape_pca()

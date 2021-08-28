@@ -8,13 +8,14 @@ import pandas as pd
 RECORDING_PATH = "../trainig_records/"
 points = [(49, 49), (40, 40), (34, 33), (29, 29), (25, 25)]
 
-df = pd.read_csv(RECORDING_PATH+"landscape2021_08_03_18.csv")
-x_line = df['alpha'].to_numpy()
-y_line = df['beta'].to_numpy()
+loss = pd.read_csv("./records/Landscape2021_08_27_00.csv")
+coords = pd.read_csv("./records/pca_coords_3.csv")
+x_line = coords['0'].to_numpy()
+y_line = coords['1'].to_numpy()
 X, Y = np.meshgrid(x_line, y_line)
-z = df['loss'].to_numpy()#.reshape([10,10])
-z = z.clip(0, 0.003)
-# plot.contour(z,levels=[x**2/100000 for x in range(30)])
+z = loss['loss'].to_numpy()#.reshape([5,5])
+# z = z.clip(0, 0.003)
+# plot.contour(X, Y, z)
 # for i in range(len(points)-1):
 #     x, y = points[i]
 #     dx = points[i+1][0] - points[i][0]

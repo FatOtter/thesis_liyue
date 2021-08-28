@@ -155,15 +155,21 @@ class ShallowCNN(torch.nn.Module):
         train_loss = train_loss/self.train_data_length
         return train_loss, train_acc
 
+    def get_flatten_parameter(self):
+        """
+        Get the fallen parameters as a tensor
+        """
+        flatten = torch.empty(1)
+        for param in self.parameters():
+            flatten = torch.cat([flatten, param.flatten()])
+        return flatten[1:]
+
     def get_parameter_norm(self):
         """
         Get the norm value for current model
         :return: norm value for flatten current parameter set
         """
-        flatten = torch.empty(1)
-        for param in self.parameters():
-            flatten = torch.cat([flatten, param.flatten()])
-        return torch.linalg.norm(flatten[1:])
+        return torch.linalg.norm(self.get_flatten_parameter())
 
     def parameter_scale_down(self, scale=0.5):
         """
