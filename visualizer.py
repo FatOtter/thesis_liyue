@@ -170,9 +170,10 @@ class Visualizer:
                 loss = self.temp_model.get_test_outcome()
 
                 # Get the axis according to matrix multiplication
-                axis = torch.matmul(self.temp_model.get_flatten_parameter(), self.vec_tensor)
-                x = axis[0].item()
-                y = axis[1].item()
+                diff_vec = self.temp_model.get_flatten_parameter() - self.anchor.get_flatten_parameter()
+                axis = torch.matmul(diff_vec, self.vec_tensor)
+                x = axis[0].item() / diff_vec.norm()
+                y = axis[1].item() / diff_vec.norm()
 
                 # Record the values
                 self.loss_map['alpha'].append(alpha_factor)
@@ -323,7 +324,7 @@ class Visualizer:
         norm = self.temp_model.get_parameter_norm()
         return loss, acc, distance, norm
 
-    def init_pca(self, df: pd.DataFrame, x_start=0, y_start=1, anchor_idx=-1):
+    def init_pca(self, df: pd.DataFrame, x_start=0, y_start=1, anchor_idx=-1, save_coords=True):
         """
         Initialize the direction with PCA applied to the input data frame as a trajectory file
         """
@@ -349,4 +350,6 @@ class Visualizer:
         selected_directions = pd.DataFrame(self.vec_tensor.numpy())
         self.random_vec1.load_parameters(selected_directions, 0)
         self.random_vec2.load_parameters(selected_directions, 1)
-
+        if save_coords:
+            coords = torch.matmul(trajectory.transpose(0,1), self.vec_tensor)
+            pd.DataFrame(coords.numpy()).to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")

@@ -2,6 +2,7 @@ import torch
 import pandas as pd
 from torch.utils.data import DataLoader
 from constants import *
+from aggregator import Aggregator
 
 
 class ShallowCNN(torch.nn.Module):
@@ -36,6 +37,7 @@ class ShallowCNN(torch.nn.Module):
         self.test_data_length = 0
         self.train_data = None
         self.train_data_length = 0
+        self.aggregator = None
 
     def forward(self, x):
         conv1_out = self.conv1(x)
@@ -59,18 +61,20 @@ class ShallowCNN(torch.nn.Module):
         data_frame[column] = all_param[1:].detach().numpy()
         return data_frame
 
-    def load_parameters(self, data_frame: pd.DataFrame, column, start_index=0):
+    def load_parameters(self, data, column=0, start_index=0):
         """
         Load parameters from the given column of the DataFrame
-        :param data_frame: The DataFrame to retrieve parameters
+        :param data: The parameter data to retrieve parameters, can be a data frame or a tensor
         :param column: The column to load parameters f
         :param start_index: The index of the column to start loading parameters
         :return: None
         """
+        if isinstance(data, pd.DataFrame):
+            data = data[column].to_numpy()
+            data = torch.tensor(data)
         for param in self.parameters():
             length = len(param.flatten())
-            to_load = data_frame[column][start_index:start_index+length].to_numpy()
-            to_load = torch.tensor(to_load)
+            to_load = data[start_index:start_index+length]
             to_load = to_load.reshape(param.size())
             with torch.no_grad():
                 param.copy_(to_load)
@@ -183,14 +187,18 @@ class ShallowCNN(torch.nn.Module):
                 param.copy_(temp)
 
     def confined_init(self, anchor: torch.nn.Module,
-                      up_bound=CONFINED_INIT_UP_BOUND, lower_bound=CONFINED_INIT_LOW_BOUND):
+                      aggregator: Aggregator,
+                      up_bound=CONFINED_INIT_UP_BOUND,
+                      lower_bound=CONFINED_INIT_LOW_BOUND):
         """
         Initialize this model using rules from Confined Gradient Descent
         :param anchor: The center of the initial position
+        :param aggregator: The aggregator object used in confined gradient descent training
         :param up_bound: The up bound distance
         :param lower_bound: The lower bound distance
         :return: None
         """
+        self.aggregator = aggregator
         anchors = anchor.parameters()
         delta = torch.rand(1) * (up_bound - lower_bound) + lower_bound
         print("Delta = {}".format(delta.item()))
@@ -200,3 +208,21 @@ class ShallowCNN(torch.nn.Module):
             random_vec = random_vec * torch.linalg.norm(anchor_vec) / torch.linalg.norm(random_vec)
             with torch.no_grad():
                 param.copy_(random_vec)
+
+    def confined_calc_gradient(self, print_progress=False):
+        """
+        Calculate the gradients for a participant of confined gradient descent
+        """
+        cache = self.get_flatten_parameter()
+        self.normal_epoch(print_progress)
+        gradient = self.get_flatten_parameter() - cache
+        self.aggregator.collect(gradient)
+        self.load_parameters(cache)
+
+    def confined_apply_gradient(self):
+        """
+        Get the aggregated gradients from the aggregator and apply to the current participant
+        """
+        cache = self.get_flatten_parameter()
+        cache += self.aggregator.get_outcome()
+        self.load_parameters(cache)

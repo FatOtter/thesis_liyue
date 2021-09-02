@@ -1,6 +1,7 @@
 from participant import ShallowCNN
 from data_distributor import DataDistributor
 from visualizer import Visualizer
+from aggregator import Aggregator
 import pandas as pd
 from constants import *
 import torch
@@ -18,7 +19,7 @@ class PackageTester:
         self.visual = Visualizer(data=self.distributor.test_set)
         self.anchor = ShallowCNN()
 
-    def train(self):
+    def normal_train(self):
         recorder = pd.DataFrame()
         for i in range(MAX_EPOCH):
             print("Starting epoch {}...".format(i+1))
@@ -34,26 +35,56 @@ class PackageTester:
         recorder.to_csv(RECORDING_PATH+"Parameters"+time_str+".csv")
         print("Training complete...")
 
+    def confined_train(self, anchor_type=NORMAL_ANCHOR):
+        recorder = pd.DataFrame()
+        anchor = self.anchor
+        # to_load = pd.read_csv("anchor.csv")
+        anchor_init_dict = {ZERO_ANCHOR: torch.zeros(anchor.get_flatten_parameter().size()),
+                            RAND_ANCHOR: torch.rand(anchor.get_flatten_parameter().size()),
+                            NORMAL_ANCHOR: torch.randn(anchor.get_flatten_parameter().size())}
+        anchor.load_parameters(anchor_init_dict[anchor_type])
+        aggregator = Aggregator(anchor.get_flatten_parameter())
+        print("Start confined initiation...")
+        for i in range(PARTICIPANTS):
+            self.models[i].confined_init(anchor, aggregator)
+        print("Confined initiation complete...")
+        for i in range(MAX_EPOCH):
+            print("Start confined training communication round {}...".format(i+1))
+            for j in range(PARTICIPANTS):
+                print("Gradient calculating for Participant {}, norm={}...".format(j+1, self.models[j].get_parameter_norm()))
+                self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
+                self.models[j].confined_calc_gradient()
+            print("Accumulated gradient norm = {}".format(aggregator.get_outcome().norm()))
+            for j in range(PARTICIPANTS):
+                self.models[j].confined_apply_gradient()
+                loss, acc = self.models[j].get_test_outcome(True)
+                print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, loss, acc))
+            aggregator.reset()
+        for j in range(PARTICIPANTS):
+            self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
+        recorder.to_csv(RECORDING_PATH+"Confined_parameters"+time_str+".csv")
+        print("Training complete...")
+
     def draw_landscape(self):
         visual = self.visual
         anchor = self.anchor
         to_load = pd.read_csv("anchor.csv")
-
         anchor.load_parameters(to_load, "epoch4", 1)
         visual.set_anchor(anchor)
         visual.get_directions().to_csv(RECORDING_PATH+"Vectors"+time_str+".csv")
         print("Vectors saved...")
 
-        visual.loss_landscape(scale=1, width=3, height=3).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
+        visual.loss_landscape(scale=3, width=10, height=10).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
     def landscape_pca(self):
         visual = self.visual
-        to_load = pd.read_csv(RECORDING_PATH+"Parameters"+time_str+".csv")
-        visual.init_pca(to_load)
+        to_load = pd.read_csv("anchor.csv")
+        visual.init_pca(to_load, x_start=1)
         print("Trajectory loaded for PCA...")
-        visual.loss_landscape(scale=8, width=100, height=100,
-                              anchor_difference=False).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
+        visual.loss_landscape(scale=3, width=10, height=10,
+                              anchor_difference=False, direction_vec_normalization=False, record_parameters=True)\
+            .to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
     def verify_accuracy(self):
@@ -71,11 +102,8 @@ class PackageTester:
                 print("x={}, y={}, loss={}, acc={}, distance={}, norm={}".format(i, j, loss, acc, distance, norm))
 
 
-
-
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    # test.train()
-    test.landscape_pca()
+    test.confined_train()
