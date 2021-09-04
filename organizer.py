@@ -52,7 +52,9 @@ class PackageTester:
             print("Start confined training communication round {}...".format(i+1))
             for j in range(PARTICIPANTS):
                 print("Gradient calculating for Participant {}, norm={}...".format(j+1, self.models[j].get_parameter_norm()))
-                self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
+                if j % RECORD_PER_N_PARTICIPANTS == 0:
+                    print("Recording parameters for participant {}...".format(j+1))
+                    self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
                 self.models[j].confined_calc_gradient()
             print("Accumulated gradient norm = {}".format(aggregator.get_outcome().norm()))
             for j in range(PARTICIPANTS):
@@ -61,7 +63,9 @@ class PackageTester:
                 print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, loss, acc))
             aggregator.reset()
         for j in range(PARTICIPANTS):
-            self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
+            if j % RECORD_PER_N_PARTICIPANTS == 0:
+                print("Recording parameters for participant {}...".format(j+1))
+                self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
         recorder.to_csv(RECORDING_PATH+"Confined_parameters"+time_str+".csv")
         print("Training complete...")
 
@@ -106,4 +110,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train()
+    test.confined_train(anchor_type=RAND_ANCHOR)

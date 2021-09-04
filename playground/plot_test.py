@@ -11,29 +11,41 @@ RECORDING_PATH = "../trainig_records/"
 #           (-2.03922728748871,0.7670726133681581),
 #           (-0.9746591960609418,0.6450843395979435),
 #           (0, 0)]
-trajectory = pd.read_csv("./records/trajectory_test2021_08_29_01.csv")
-points = []
-for i in range(len(trajectory)):
-    points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
-points.append((0,0))
+# trajectory = pd.read_csv("./records/trajectory_test2021_09_03_10.csv")
+# points = []
+# for i in range(len(trajectory)):
+#     points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+# points.append((0,0))
 
 
-loss = pd.read_csv("./records/Landscape2021_08_29_01.csv")
-coords = pd.read_csv("./records/pca_coords2021_08_29_01.csv")
+# loss = pd.read_csv("./records/Landscape2021_08_29_01.csv")
+coords = pd.read_csv("./records/trajectory_test2021_09_03_10.csv")
 x_line = coords['0'].to_numpy()
 y_line = coords['1'].to_numpy()
-X = x_line.reshape([10,10])
-Y = y_line.reshape([10,10])
-z = loss['loss'].to_numpy().reshape([10, 10])
-z = np.clip(z, 0, 0.005)
-plot.contour(X, Y, z, 10)
-for i in range(len(points)-1):
-    x, y = points[i]
-    dx = points[i+1][0] - points[i][0]
-    dy = points[i+1][1] - points[i][1]
-    plot.arrow(x, y, dx, dy,length_includes_head=True, color='red', head_width=0.1)
+# X = x_line.reshape([10,10])
+# Y = y_line.reshape([10,10])
+# z = loss['loss'].to_numpy().reshape([10, 10])
+# z = np.clip(z, 0, 0.005)
+# plot.contour(X, Y, z, 10)
+# for i in range(len(points)-1):
+#     x, y = points[i]
+#     dx = points[i+1][0] - points[i][0]
+#     dy = points[i+1][1] - points[i][1]
+#     plot.arrow(x, y, dx, dy,length_includes_head=True, color='red', head_width=0.1)
+ax1 = plot.gca()
+x1 = x_line[0::4]
+y1 = y_line[0::4]
+x2 = x_line[1::4]
+y2 = y_line[1::4]
+x3 = x_line[3::4]
+y3 = y_line[3::4]
 
-plot.colorbar()
+scatter1 = ax1.scatter(x1, y1, c="r", s=0.5)
+scatter2 = ax1.scatter(x2, y2, c="b", s=0.5)
+scatter3 = ax1.scatter(x3, y3, c="y", s=0.5)
+
+
+# plot.colorbar()
 plot.show()
 
 # fig = plot.figure()

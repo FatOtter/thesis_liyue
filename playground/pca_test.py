@@ -3,7 +3,7 @@ from participant import ShallowCNN
 from constants import *
 import pandas as pd
 
-df = pd.read_csv("./records/Parameters2021_08_28_14.csv")
+df = pd.read_csv("./records/Confined_parameters2021_09_03_00.csv")
 t = df.to_numpy()
 t = t[:, 1:]
 # print(t)
@@ -30,7 +30,7 @@ df = pd.DataFrame(trajectory.numpy())
 df.to_csv("./records/trajectory_test"+time_str+".csv")
 
 
-df = pd.read_csv("records/PCA_parameters_2021_08_29_01.csv")
+df = pd.read_csv("records/Confined_parameters2021_09_03_00.csv")
 p = df.to_numpy()
 p = p[1:, 1:]
 p = torch.tensor(p)
@@ -40,7 +40,7 @@ print(p.size())
 p = p.transpose(0,1)
 
 
-coords = torch.matmul(vec.transpose(0,1), p)
+coords = torch.matmul(vec.transpose(0,1), M)
 print(coords)
 df = pd.DataFrame(coords.transpose(0,1).numpy())
-df.to_csv("./records/pca_coords"+time_str+".csv")
+df.to_csv("./records/trajectory_coords"+time_str+".csv")
