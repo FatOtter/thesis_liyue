@@ -78,36 +78,33 @@ class PackageTester:
         visual.get_directions().to_csv(RECORDING_PATH+"Vectors"+time_str+".csv")
         print("Vectors saved...")
 
-        visual.loss_landscape(scale=3, width=10, height=10).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
+        visual.loss_landscape(scale=2, width=10, height=10).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
     def landscape_pca(self):
         visual = self.visual
-        to_load = pd.read_csv("anchor.csv")
-        visual.init_pca(to_load, x_start=1)
+        to_load = pd.read_csv("./playground/records/Confined_parameters2021_09_03_00.csv")
+        visual.init_pca(to_load, anchor_idx=320)
         print("Trajectory loaded for PCA...")
-        visual.loss_landscape(scale=3, width=10, height=10,
-                              anchor_difference=False, direction_vec_normalization=False, record_parameters=True)\
+        visual.loss_landscape(scale=3, width=50, height=50,
+                              anchor_difference=False, direction_vec_normalization=True)\
             .to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
     def verify_accuracy(self):
-        anchor = self.anchor
-        dist = self.distributor
+        temp = ShallowCNN()
+        temp.set_test_data(self.distributor.get_test_data(4))
         # new_params = pd.read_csv(RECORDING_PATH+"Parameters2021_08_04_00.csv")
-        to_load = pd.read_csv(RECORDING_PATH+"anchor.csv")
-        anchor.load_parameters(to_load, "epoch4", 1)
-        visual = self.visual
-        visual.scale = 2
-        visual.set_anchor(anchor)
-        for i in range(2):
-            for j in range(2):
-                loss, acc, distance, norm = visual.get_loss_at_axis(i, j)
-                print("x={}, y={}, loss={}, acc={}, distance={}, norm={}".format(i, j, loss, acc, distance, norm))
+        to_load = pd.read_csv("./playground/records/Confined_parameters2021_09_03_00.csv")
+        for i in range(100):
+            column_name = "epoch{}_participant4".format(i)
+            temp.load_parameters(to_load, column=column_name)
+            loss, acc = temp.get_test_outcome(calc_acc=True)
+            print("Epoch={}, loss={}, acc={}".format(i, loss, acc))
 
 
 if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train(anchor_type=RAND_ANCHOR)
+    test.landscape_pca()

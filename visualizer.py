@@ -138,9 +138,10 @@ class Visualizer:
                 self.random_vec2 = theta2
             else:
                 raise TypeError("Theta2 is not a valid instance of model")
-        self.vec_tensor = torch.cat((self.random_vec1.get_flatten_parameter(),
-                                     self.random_vec2.get_flatten_parameter()))
-        self.vec_tensor = self.vec_tensor.reshape(self.random_vec2.get_flatten_parameter().size()[0], -1)
+        if self.vec_tensor.size()[0] != self.random_vec2.get_flatten_parameter().size()[0]:
+            self.vec_tensor = torch.cat((self.random_vec1.get_flatten_parameter(),
+                                         self.random_vec2.get_flatten_parameter()))
+            self.vec_tensor = self.vec_tensor.reshape(self.random_vec2.get_flatten_parameter().size()[0], -1)
         print("The direction vector size: {}".format(self.vec_tensor.size()))
         if anchor is not None:
             self.set_anchor(anchor)
@@ -171,9 +172,9 @@ class Visualizer:
 
                 # Get the axis according to matrix multiplication
                 diff_vec = self.temp_model.get_flatten_parameter() - self.anchor.get_flatten_parameter()
-                axis = torch.matmul(diff_vec, self.vec_tensor)
-                x = axis[0].item() / diff_vec.norm()
-                y = axis[1].item() / diff_vec.norm()
+                axis = torch.matmul(diff_vec.detach(), self.vec_tensor.type(torch.float))
+                x = axis[0].item()
+                y = axis[1].item()
 
                 # Record the values
                 self.loss_map['alpha'].append(alpha_factor)
@@ -337,6 +338,8 @@ class Visualizer:
         anchor_df = pd.DataFrame(anchor.numpy())
         self.anchor = ShallowCNN()
         self.anchor.load_parameters(anchor_df, 0)
+        anchor_diff = self.anchor.get_flatten_parameter() - anchor
+        print("Anchor loaded with difference {} to the original".format(anchor_diff.norm()))
 
         # Make difference of the trajectory with the defined anchor (usually final epoch parameters)
         trajectory -= anchor
@@ -350,6 +353,10 @@ class Visualizer:
         selected_directions = pd.DataFrame(self.vec_tensor.numpy())
         self.random_vec1.load_parameters(selected_directions, 0)
         self.random_vec2.load_parameters(selected_directions, 1)
+        loaded_diff1 = self.vec_tensor[:, 0] - self.random_vec1.get_flatten_parameter()
+        loaded_diff2 = self.vec_tensor[:, 1] - self.random_vec2.get_flatten_parameter()
+        print("Loaded parameters difference with original tensor: {}, {}".format(loaded_diff1.norm(), loaded_diff2.norm()))
+
         if save_coords:
             coords = torch.matmul(trajectory.transpose(0,1), self.vec_tensor)
-            pd.DataFrame(coords.numpy()).to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")
+            pd.DataFrame(coords.detach().numpy()).to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")

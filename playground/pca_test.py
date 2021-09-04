@@ -9,11 +9,11 @@ t = t[:, 1:]
 # print(t)
 t = torch.tensor(t)
 t = t.transpose(0, 1)
-anchor = t[-1]
+anchor = t[320]
 M = t - anchor
 print(M)
 print(M.size())
-M = M[:-1]
+M = M[:320]
 M = M.transpose(0, 1)
 print(M.size())
 
@@ -30,7 +30,7 @@ df = pd.DataFrame(trajectory.numpy())
 df.to_csv("./records/trajectory_test"+time_str+".csv")
 
 
-df = pd.read_csv("records/Confined_parameters2021_09_03_00.csv")
+df = pd.read_csv("records/PCA_parameters_2021_09_04_14.csv")
 p = df.to_numpy()
 p = p[1:, 1:]
 p = torch.tensor(p)
@@ -40,7 +40,10 @@ print(p.size())
 p = p.transpose(0,1)
 
 
-coords = torch.matmul(vec.transpose(0,1), M)
+coords = torch.matmul(vec.transpose(0,1), p)
 print(coords)
+for i in range(len(p)-1):
+    x = torch.matmul(p[:, i], vec)
+    print(x)
 df = pd.DataFrame(coords.transpose(0,1).numpy())
 df.to_csv("./records/trajectory_coords"+time_str+".csv")
