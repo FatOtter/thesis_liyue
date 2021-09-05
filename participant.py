@@ -209,7 +209,7 @@ class ShallowCNN(torch.nn.Module):
             with torch.no_grad():
                 param.copy_(random_vec)
 
-    def confined_calc_gradient(self, print_progress=False):
+    def calc_local_gradient(self, print_progress=False):
         """
         Calculate the gradients for a participant of confined gradient descent
         """
@@ -226,3 +226,27 @@ class ShallowCNN(torch.nn.Module):
         cache = self.get_flatten_parameter()
         cache += self.aggregator.get_outcome()
         self.load_parameters(cache)
+
+
+class GlobalModel(ShallowCNN):
+    """
+    The class representing a global model in traditional federated learning setting
+    """
+    def __init__(self):
+        super(GlobalModel, self).__init__()
+        self.threshold_fraction = THRESHOLD_FRACTION
+        self.selection_rate = SELECTION_RATE
+
+    def share_parameters(self, privacy_preserving=True):
+        to_share = self.get_flatten_parameter().detach().clone()
+        indices = None
+        if privacy_preserving:
+            threshold_count = round(to_share.size(0) * self.threshold_fraction)
+            selection_count = round(to_share.size(0) * self.selection_rate)
+            indices = to_share.topk(threshold_count).indices
+            perm = torch.randperm(threshold_count)
+            indices = indices[perm[:selection_count]]
+            rei = torch.zeros(to_share.size())
+            rei[indices] = to_share[indices]
+            to_share = rei
+        return to_share, indices

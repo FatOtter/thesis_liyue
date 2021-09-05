@@ -55,7 +55,7 @@ class PackageTester:
                 if j % RECORD_PER_N_PARTICIPANTS == 0:
                     print("Recording parameters for participant {}...".format(j+1))
                     self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
-                self.models[j].confined_calc_gradient()
+                self.models[j].calc_local_gradient()
             print("Accumulated gradient norm = {}".format(aggregator.get_outcome().norm()))
             for j in range(PARTICIPANTS):
                 self.models[j].confined_apply_gradient()
@@ -107,4 +107,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.landscape_pca()
+    test.confined_train()

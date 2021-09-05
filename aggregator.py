@@ -1,5 +1,4 @@
 import torch
-from participant import ShallowCNN
 
 
 class Aggregator:
@@ -22,12 +21,16 @@ class Aggregator:
         self.collected_gradients = torch.zeros(self.sample_gradients.size())
         self.counter = 0
 
-    def collect(self, gradient: torch.Tensor):
+    def collect(self, gradient: torch.Tensor, sample_count=None):
         """
         Collect one set of gradients from a participant
         """
-        self.collected_gradients += gradient
-        self.counter += 1
+        if sample_count is None:
+            self.collected_gradients += gradient
+            self.counter += 1
+        else:
+            self.collected_gradients += gradient * sample_count
+            self.counter += sample_count
 
     def get_outcome(self, reset=False):
         """
