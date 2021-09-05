@@ -20,7 +20,6 @@ print(M.size())
 u, s, v = torch.pca_lowrank(M)
 # vec = u[:, :2].numpy()
 # vec_df = pd.DataFrame(vec)
-# vec_df.to_csv("pca_diff.csv")
 
 vec = u[:, :2]
 trajectory = torch.matmul(vec.transpose(0,1), M)
