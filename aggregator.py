@@ -1,5 +1,4 @@
 import torch
-from participant import ShallowCNN
 
 
 class Aggregator:
@@ -13,7 +12,6 @@ class Aggregator:
         self.sample_gradients = sample_gradients
         self.collected_gradients = torch.zeros(sample_gradients.size())
         self.counter = 0
-        self.global_model = ShallowCNN()
 
     def reset(self):
         """
@@ -37,9 +35,3 @@ class Aggregator:
         if reset:
             self.reset()
         return result
-
-    def get_global_model(self):
-        """
-        Get the global model
-        """
-        return self.global_model
