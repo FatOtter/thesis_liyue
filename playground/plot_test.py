@@ -11,40 +11,62 @@ RECORDING_PATH = "../trainig_records/"
 #           (-2.03922728748871,0.7670726133681581),
 #           (-0.9746591960609418,0.6450843395979435),
 #           (0, 0)]
-trajectory = pd.read_csv("./records/Trajectory2021_09_04_14.csv")
+trajectory = pd.read_csv("./records/Trajectory2021_09_11_14.csv")
 # points.append((0,0))
 
 
-loss = pd.read_csv("./records/Landscape2021_09_04_15.csv")
+loss = pd.read_csv("./records/Landscape2021_09_11_14.csv")
 coords = pd.read_csv("./records/trajectory_coords2021_09_04_14.csv")
 
 x_line = loss['x'].to_numpy()
 y_line = loss['y'].to_numpy()
 X = x_line.reshape([50,50])
 Y = y_line.reshape([50,50])
-z = loss['loss'].to_numpy()#.reshape([50, 50])
-# z = np.clip(z, 0, 0.2)
-# plot.contour(X, Y, z, [2**x/1000 for x in range(22)], linewidths=0.5)
-# #
-# points = []
-# for i in range(len(trajectory)):
-#     if i % 4 == 0:
-#         points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
-# for i in range(len(points)-1):
-#     x, y = points[i]
-#     dx = points[i+1][0] - points[i][0]
-#     dy = points[i+1][1] - points[i][1]
-#     plot.arrow(x, y, dx, dy,length_includes_head=True, color='red', head_width=0.05)
+z = loss['loss'].to_numpy().reshape([50, 50])
+# z = np.clip(z, 0, 100)
+plot.contour(X, Y, z, [2**x/100 for x in range(15)], linewidths=0.5)
 #
-# points = []
-# for i in range(len(trajectory)):
-#     if i % 4 == 1:
-#         points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
-# for i in range(len(points)-1):
-#     x, y = points[i]
-#     dx = points[i+1][0] - points[i][0]
-#     dy = points[i+1][1] - points[i][1]
-#     plot.arrow(x, y, dx, dy,length_includes_head=True, color='green', head_width=0.05)
+points = []
+for i in range(len(trajectory)):
+    if i % 3 == 0:
+        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+for i in range(len(points)-2):
+    x, y = points[i]
+    dx = points[i+1][0] - points[i][0]
+    dy = points[i+1][1] - points[i][1]
+    plot.arrow(x, y, dx, dy,length_includes_head=True, color='red', head_width=0.05)
+x, y = points[-3]
+dx = points[-3][0] - points[-6][0]
+dy = points[-3][1] - points[-6][1]
+plot.arrow(x, y, dx, dy,length_includes_head=False, color='red', head_width=2)
+
+points = []
+for i in range(len(trajectory)):
+    if i % 3 == 1:
+        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+for i in range(len(points)-2):
+    x, y = points[i]
+    dx = points[i+1][0] - points[i][0]
+    dy = points[i+1][1] - points[i][1]
+    plot.arrow(x, y, dx, dy,length_includes_head=True, color='green', head_width=0.05)
+x, y = points[-2]
+dx = points[-2][0] - points[-5][0]
+dy = points[-2][1] - points[-5][1]
+plot.arrow(x, y, dx, dy,length_includes_head=False, color='green', head_width=2)
+
+points = []
+for i in range(len(trajectory)):
+    if i % 3 == 2:
+        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+for i in range(len(points)-2):
+    x, y = points[i]
+    dx = points[i+1][0] - points[i][0]
+    dy = points[i+1][1] - points[i][1]
+    plot.arrow(x, y, dx, dy,length_includes_head=True, color='blue', head_width=0.05)
+x, y = points[-1]
+dx = points[-1][0] - points[-4][0]
+dy = points[-1][1] - points[-4][1]
+plot.arrow(x, y, dx, dy,length_includes_head=False, color='blue', head_width=2)
 # ax1 = plot.gca()
 # x1 = x_line[0::4]
 # y1 = y_line[0::4]
@@ -58,15 +80,15 @@ z = loss['loss'].to_numpy()#.reshape([50, 50])
 # scatter3 = ax1.scatter(x3, y3, c="y", s=0.5)
 
 #
-# color_bar = plot.colorbar(format="%.3f")
-# plot.show()
-
-fig = plot.figure()
-ax = plot.axes(projection="3d")
-cmap = plot.get_cmap('hot')
-surf = ax.plot_trisurf(x_line, y_line, z, cmap=cmap)
-ax.zaxis.set_major_locator(LinearLocator(10))
-fig.colorbar(surf, ax=ax)
-ax.set_title('loss landscape')
-ax.set_zlabel('loss value')
+color_bar = plot.colorbar(format="%.3f")
 plot.show()
+
+# fig = plot.figure()
+# ax = plot.axes(projection="3d")
+# cmap = plot.get_cmap('hot')
+# surf = ax.plot_trisurf(x_line, y_line, z, cmap=cmap)
+# ax.zaxis.set_major_locator(LinearLocator(10))
+# fig.colorbar(surf, ax=ax)
+# ax.set_title('loss landscape')
+# ax.set_zlabel('loss value')
+# plot.show()

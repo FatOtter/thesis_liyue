@@ -38,6 +38,8 @@ class ShallowCNN(torch.nn.Module):
         self.train_data = None
         self.train_data_length = 0
         self.aggregator = None
+        self.threshold_fraction = THRESHOLD_FRACTION
+        self.selection_rate = SELECTION_RATE
 
     def forward(self, x):
         conv1_out = self.conv1(x)
@@ -201,7 +203,7 @@ class ShallowCNN(torch.nn.Module):
         self.aggregator = aggregator
         anchors = anchor.parameters()
         delta = torch.rand(1) * (up_bound - lower_bound) + lower_bound
-        print("Delta = {}".format(delta.item()))
+        print("Delta = {}, count of samples= {}".format(delta.item(), len(self.train_data)+len(self.test_data)))
         for param in self.parameters():
             anchor_vec = next(anchors)
             random_vec = anchor_vec + delta * torch.rand(anchor_vec.size())
@@ -209,15 +211,26 @@ class ShallowCNN(torch.nn.Module):
             with torch.no_grad():
                 param.copy_(random_vec)
 
-    def calc_local_gradient(self, print_progress=False):
+    def random_init(self, random_type=NORMAL_ANCHOR):
+        init_dict = {ZERO_ANCHOR: torch.zeros(self.get_flatten_parameter().size()),
+                     RAND_ANCHOR: torch.rand(self.get_flatten_parameter().size()),
+                     NORMAL_ANCHOR: torch.randn(self.get_flatten_parameter().size())}
+        self.load_parameters(init_dict[random_type])
+
+    def calc_local_gradient(self, print_progress=False, privacy_preserving=False, gradient_applied=False):
         """
         Calculate the gradients for a participant of confined gradient descent
         """
         cache = self.get_flatten_parameter()
         self.normal_epoch(print_progress)
         gradient = self.get_flatten_parameter() - cache
-        self.aggregator.collect(gradient)
-        self.load_parameters(cache)
+        if privacy_preserving:
+            gradient, indices = self.select_by_threshold(gradient)
+            self.aggregator.collect(gradient, indices)
+        else:
+            self.aggregator.collect(gradient)
+        if not gradient_applied:
+            self.load_parameters(cache)
 
     def confined_apply_gradient(self):
         """
@@ -227,6 +240,20 @@ class ShallowCNN(torch.nn.Module):
         cache += self.aggregator.get_outcome()
         self.load_parameters(cache)
 
+    def select_by_threshold(self, to_share: torch.Tensor):
+        """
+        Apply the privacy-preserving method following selection-by-threshold approach
+        """
+        threshold_count = round(to_share.size(0) * self.threshold_fraction)
+        selection_count = round(to_share.size(0) * self.selection_rate)
+        indices = to_share.topk(threshold_count).indices
+        perm = torch.randperm(threshold_count)
+        indices = indices[perm[:selection_count]]
+        rei = torch.zeros(to_share.size())
+        rei[indices] = to_share[indices]
+        to_share = rei
+        return to_share, indices
+
 
 class GlobalModel(ShallowCNN):
     """
@@ -234,19 +261,37 @@ class GlobalModel(ShallowCNN):
     """
     def __init__(self):
         super(GlobalModel, self).__init__()
-        self.threshold_fraction = THRESHOLD_FRACTION
-        self.selection_rate = SELECTION_RATE
 
     def share_parameters(self, privacy_preserving=True):
+        """
+        Share the parameter to participants with privacy preserving mechanism
+        """
         to_share = self.get_flatten_parameter().detach().clone()
         indices = None
         if privacy_preserving:
-            threshold_count = round(to_share.size(0) * self.threshold_fraction)
-            selection_count = round(to_share.size(0) * self.selection_rate)
-            indices = to_share.topk(threshold_count).indices
-            perm = torch.randperm(threshold_count)
-            indices = indices[perm[:selection_count]]
-            rei = torch.zeros(to_share.size())
-            rei[indices] = to_share[indices]
-            to_share = rei
+            to_share, indices = self.select_by_threshold(to_share)
         return to_share, indices
+
+    def apply_gradient(self):
+        """
+        Apply the gradients shared by participants
+        """
+        to_load = self.get_flatten_parameter().detach().clone()
+        to_load += self.aggregator.get_outcome(reset=True)
+        self.load_parameters(to_load)
+
+
+class FederatedParticipant(ShallowCNN):
+    """
+    The class representing a participant in traditional federated learning
+    """
+    def __init__(self):
+        super(FederatedParticipant, self).__init__()
+
+    def collect_parameters(self, parameters: torch.Tensor, indices: torch.Tensor):
+        """
+        Collect parameters from the global model
+        """
+        to_load = self.get_flatten_parameter().detach().clone()
+        to_load[indices] = parameters[indices]
+        self.load_parameters(to_load)

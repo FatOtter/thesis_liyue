@@ -10,7 +10,7 @@ time_str = now.strftime("%Y_%m_%d_%H")
 
 # General Machine learning setting
 MAX_EPOCH = 100
-DEFAULT_BATCH_SIZE = 32
+DEFAULT_BATCH_SIZE = 16
 PARTICIPANTS = 10
 
 # Confined Gradient descent related setting
@@ -21,7 +21,7 @@ RAND_ANCHOR = "uniform"
 NORMAL_ANCHOR = "normal"
 
 # Traditional federated learning related
-THRESHOLD_FRACTION = 0.3
-SELECTION_RATE = 0.1
+THRESHOLD_FRACTION = 1
+SELECTION_RATE = 0.2
 
 

@@ -7,7 +7,7 @@ class DataDistributor:
     """
     Distribute defined data set (vertically) according to given number of participants
     """
-    def __init__(self, number_of_participants=10, data_set="MNIST", data_set_path=DATA_SET_PATH):
+    def __init__(self, number_of_participants=PARTICIPANTS, data_set="MNIST", data_set_path=DATA_SET_PATH, balanced=True):
         """
         Initialize the data distributor according to given parameters
         :param number_of_participants: The overall participants to distribute data to
@@ -30,9 +30,9 @@ class DataDistributor:
             raise NotImplementedError("Data set is not implemented yet")
         self.split_train = None
         self.split_test = None
-        self.split_data()
+        self.split_data(balanced)
 
-    def split_data(self):
+    def split_data(self, balanced=True):
         """
         Distribute data according to the given number of participants, split data stored in self.split_train and
         self.split_test
@@ -42,17 +42,28 @@ class DataDistributor:
         test_samples_per_node = len(self.test_set) // self.number_of_participants
         train_samples_count = []
         test_samples_count = []
-        for i in range(self.number_of_participants):
-            if i < self.number_of_participants - 1:
-                train_samples_count.append(train_samples_per_node)
-                test_samples_count.append(test_samples_per_node)
-            else:
-                train_samples_count.append(
-                    len(self.train_set) - (self.number_of_participants - 1) * train_samples_per_node
-                )
-                test_samples_count.append(
-                    len(self.test_set) - (self.number_of_participants - 1) * test_samples_per_node
-                )
+        if balanced:
+            for i in range(self.number_of_participants):
+                if i < self.number_of_participants - 1:
+                    train_samples_count.append(train_samples_per_node)
+                    test_samples_count.append(test_samples_per_node)
+                else:
+                    train_samples_count.append(
+                        len(self.train_set) - (self.number_of_participants - 1) * train_samples_per_node
+                    )
+                    test_samples_count.append(
+                        len(self.test_set) - (self.number_of_participants - 1) * test_samples_per_node
+                    )
+        else:
+            rands = torch.randint(20, 100, (self.number_of_participants, ))
+            for i in range(self.number_of_participants):
+                train_samples_count.append(round((len(self.train_set) * rands[i] / sum(rands)).item()))
+                test_samples_count.append(round((len(self.test_set) * rands[i] / sum(rands)).item()))
+            train_diff = len(self.train_set) - sum(train_samples_count)
+            test_diff = len(self.test_set) - sum(test_samples_count)
+            train_samples_count[-1] += train_diff
+            test_samples_count[-1] += test_diff
+
         self.split_train = torch.utils.data.random_split(self.train_set, train_samples_count)
         self.split_test = torch.utils.data.random_split(self.test_set, test_samples_count)
 
