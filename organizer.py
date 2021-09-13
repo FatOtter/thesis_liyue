@@ -29,7 +29,6 @@ class PackageTester:
                 print("Test loss: {}, test acc: {}".format(loss, acc))
                 self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j))
                 self.models[j].normal_epoch(True)
-
         for j in range(PARTICIPANTS):
             self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
         recorder.to_csv(RECORDING_PATH+"Parameters"+time_str+".csv")
@@ -159,4 +158,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.landscape_pca()
+    test.confined_train()

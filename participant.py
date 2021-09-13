@@ -9,15 +9,34 @@ class ShallowCNN(torch.nn.Module):
     """
     The module used for verification, currently only support MNIST data set
     """
-    def __init__(self):
+    def __init__(self, mode=DEFAULT_DATA_SET):
         super(ShallowCNN, self).__init__()
-        self.conv1 = torch.nn.Sequential(
-            torch.nn.Conv2d(1,8,3,1,1),
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2)
-        )
+        if mode == "MNIST":
+            self.conv1 = torch.nn.Sequential(
+                torch.nn.Conv2d(1,8,3,1,1),
+                torch.nn.ReLU(),
+                torch.nn.MaxPool2d(2)
+            )
+            self.dense = torch.nn.Sequential(
+                torch.nn.Linear(16 * 3 * 3, 64),
+                torch.nn.ReLU(),
+                torch.nn.Linear(64, 10)
+            )
+        elif mode == "CIFAR-10":
+            self.conv1 = torch.nn.Sequential(
+                torch.nn.Conv2d(3,8,3,1,1),
+                torch.nn.ReLU(),
+                torch.nn.MaxPool2d(2)
+            )
+            self.dense = torch.nn.Sequential(
+                torch.nn.Linear(16 * 4 * 4, 64),
+                torch.nn.ReLU(),
+                torch.nn.Linear(64, 10)
+            )
+        else:
+            raise NotImplementedError("Unsupported data set")
         self.conv2 = torch.nn.Sequential(
-            torch.nn.Conv2d(8,16, 3, 1, 1),
+            torch.nn.Conv2d(8, 16, 3, 1, 1),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(2)
         )
@@ -26,11 +45,7 @@ class ShallowCNN(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(2)
         )
-        self.dense = torch.nn.Sequential(
-            torch.nn.Linear(16*3*3, 64),
-            torch.nn.ReLU(),
-            torch.nn.Linear(64, 10)
-        )
+
         self.loss_function = torch.nn.CrossEntropyLoss()
         self.optimizer = torch.optim.Adam(self.parameters())
         self.test_data = None
