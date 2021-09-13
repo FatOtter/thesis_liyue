@@ -36,12 +36,12 @@ class ShallowCNN(torch.nn.Module):
         else:
             raise NotImplementedError("Unsupported data set")
         self.conv2 = torch.nn.Sequential(
-            torch.nn.Conv2d(8, 16, 3, 1, 1),
+            torch.nn.Conv2d(8, 32, 3, 1, 1),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(2)
         )
         self.conv3 = torch.nn.Sequential(
-            torch.nn.Conv2d(16, 16, 3, 1, 1),
+            torch.nn.Conv2d(32, 16, 3, 1, 1),
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(2)
         )

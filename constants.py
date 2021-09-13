@@ -12,7 +12,7 @@ time_str = now.strftime("%Y_%m_%d_%H")
 MAX_EPOCH = 50
 DEFAULT_BATCH_SIZE = 16
 PARTICIPANTS = 1
-DEFAULT_DATA_SET = "MNIST"
+DEFAULT_DATA_SET = "CIFAR-10"
 
 # Confined Gradient descent related setting
 CONFINED_INIT_UP_BOUND = 0.1
