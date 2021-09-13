@@ -2,17 +2,17 @@ from datetime import datetime
 
 # Recording and utility related
 RECORDING_PATH = "./playground/records/"
-DATA_SET_PATH = "./cifar10"
+DATA_SET_PATH = "datasets"
 PARAMETER_FILE = "anchor.csv"
-RECORD_PER_N_PARTICIPANTS = 4
+RECORD_PER_N_PARTICIPANTS = 1
 now = datetime.now()
 time_str = now.strftime("%Y_%m_%d_%H")
 
 # General Machine learning setting
-MAX_EPOCH = 200
+MAX_EPOCH = 50
 DEFAULT_BATCH_SIZE = 16
-PARTICIPANTS = 20
-DEFAULT_DATA_SET = "CIFAR-10"
+PARTICIPANTS = 1
+DEFAULT_DATA_SET = "MNIST"
 
 # Confined Gradient descent related setting
 CONFINED_INIT_UP_BOUND = 0.1

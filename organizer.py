@@ -9,7 +9,7 @@ import torch
 
 class PackageTester:
     def __init__(self):
-        self.distributor = DataDistributor(number_of_participants=PARTICIPANTS, balanced=False)
+        self.distributor = DataDistributor(number_of_participants=PARTICIPANTS, balanced=True)
         self.models = []
         for i in range(PARTICIPANTS):
             self.models.append(ShallowCNN())
@@ -158,4 +158,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train()
+    test.normal_train()
