@@ -218,13 +218,14 @@ class ShallowCNN(torch.nn.Module):
         self.aggregator = aggregator
         anchors = anchor.parameters()
         delta = torch.rand(1) * (up_bound - lower_bound) + lower_bound
-        print("Delta = {}, count of samples= {}".format(delta.item(), len(self.train_data)+len(self.test_data)))
+        # print("Delta = {}, count of samples= {}".format(delta.item(), len(self.train_data)+len(self.test_data)))
         for param in self.parameters():
             anchor_vec = next(anchors)
             random_vec = anchor_vec + delta * torch.rand(anchor_vec.size())
             random_vec = random_vec * torch.linalg.norm(anchor_vec) / torch.linalg.norm(random_vec)
             with torch.no_grad():
                 param.copy_(random_vec)
+        return delta.item(), len(self.train_data)+len(self.test_data)
 
     def random_init(self, random_type=NORMAL_ANCHOR):
         init_dict = {ZERO_ANCHOR: torch.zeros(self.get_flatten_parameter().size()),

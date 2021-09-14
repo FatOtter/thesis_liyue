@@ -36,6 +36,7 @@ class PackageTester:
 
     def confined_train(self, anchor_type=NORMAL_ANCHOR):
         recorder = pd.DataFrame()
+        acc_recorder = pd.DataFrame(columns=["communication_round", "participant", "loss", "acc"])
         anchor = self.anchor
         # to_load = pd.read_csv("anchor.csv")
         anchor_init_dict = {ZERO_ANCHOR: torch.zeros(anchor.get_flatten_parameter().size()),
@@ -45,7 +46,13 @@ class PackageTester:
         aggregator = Aggregator(anchor.get_flatten_parameter())
         print("Start confined initiation...")
         for i in range(PARTICIPANTS):
-            self.models[i].confined_init(anchor, aggregator)
+            delta, lth = self.models[i].confined_init(anchor, aggregator)
+            loss, acc = self.models[i].get_test_outcome(True)
+            print("Participant {} has been initialized, delta={}, batches allocated={}, initial loss={}, initial acc={}"
+                  .format(i+1, delta, lth, loss, acc))
+            if i % RECORD_PER_N_PARTICIPANTS == 0:
+                # print("Recording parameters for participant {}...".format(j + 1))
+                self.models[i].write_parameters(recorder, "epoch{}_participant{}".format(0, i + 1))
         print("Confined initiation complete...")
         for i in range(MAX_EPOCH):
             print("Start confined training communication round {}...".format(i+1))
@@ -60,12 +67,14 @@ class PackageTester:
                 self.models[j].confined_apply_gradient()
                 loss, acc = self.models[j].get_test_outcome(True)
                 print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, loss, acc))
+                acc_recorder.loc[len(acc_recorder)] = (i, j, loss, acc)
             aggregator.reset()
         for j in range(PARTICIPANTS):
             if j % RECORD_PER_N_PARTICIPANTS == 0:
                 print("Recording parameters for participant {}...".format(j+1))
                 self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
         recorder.to_csv(RECORDING_PATH+"Confined_parameters"+time_str+".csv")
+        acc_recorder.to_csv(RECORDING_PATH+"Confined_acc"+time_str+".csv")
         print("Training complete...")
 
     def federated_train(self):
@@ -158,4 +167,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.normal_train()
+    test.confined_train()
