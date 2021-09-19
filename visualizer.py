@@ -345,6 +345,7 @@ class Visualizer:
         trajectory -= anchor
         trajectory = trajectory[:anchor_idx]
         trajectory = trajectory.transpose(0, 1)
+        print(trajectory.size())
 
         # Conduct PCA process
         u, s, v = torch.pca_lowrank(trajectory)
@@ -357,6 +358,15 @@ class Visualizer:
         loaded_diff2 = self.vec_tensor[:, 1] - self.random_vec2.get_flatten_parameter()
         print("Loaded parameters difference with original tensor: {}, {}".format(loaded_diff1.norm(), loaded_diff2.norm()))
 
+        # Save the trajectory to a csv file if necessary
         if save_coords:
             coords = torch.matmul(trajectory.transpose(0,1), self.vec_tensor)
-            pd.DataFrame(coords.detach().numpy()).to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")
+            acc_recorder = torch.zeros(0)
+            for i in range(len(trajectory[0])):
+                print("\rOverall {} trajectory points, now calculating {}".format(len(trajectory[0]), i), end="")
+                self.temp_model.load_parameters(trajectory[:, i])
+                loss, acc = self.temp_model.get_test_outcome(True)
+                acc_recorder = torch.cat([acc_recorder, torch.tensor((loss, acc)).unsqueeze(0)])
+            coords = torch.cat([coords, acc_recorder], dim=1)
+            print("Trajectory file preview: \n", coords)
+            pd.DataFrame(coords.detach().numpy(), columns=["x", "y", "loss", "acc"]).to_csv(RECORDING_PATH+"Trajectory"+time_str+".csv")

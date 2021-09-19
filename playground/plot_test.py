@@ -11,25 +11,25 @@ RECORDING_PATH = "../trainig_records/"
 #           (-2.03922728748871,0.7670726133681581),
 #           (-0.9746591960609418,0.6450843395979435),
 #           (0, 0)]
-trajectory = pd.read_csv("./records/Trajectory2021_09_11_14.csv")
+trajectory = pd.read_csv("./records/Trajectory2021_09_17_19.csv")
 # points.append((0,0))
 
 
-loss = pd.read_csv("./records/Landscape2021_09_11_14.csv")
+loss = pd.read_csv("./records/Landscape2021_09_17_19.csv")
 coords = pd.read_csv("./records/trajectory_coords2021_09_04_14.csv")
 
 x_line = loss['x'].to_numpy()
 y_line = loss['y'].to_numpy()
-X = x_line.reshape([50,50])
-Y = y_line.reshape([50,50])
-z = loss['loss'].to_numpy().reshape([50, 50])
+X = x_line.reshape([30,30])
+Y = y_line.reshape([30,30])
+z = loss['loss'].to_numpy().reshape([30, 30])
 # z = np.clip(z, 0, 100)
 plot.contour(X, Y, z, [2**x/100 for x in range(15)], linewidths=0.5)
 #
 points = []
 for i in range(len(trajectory)):
     if i % 3 == 0:
-        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+        points.append((trajectory.loc[i]["x"], trajectory.loc[i]["y"]))
 for i in range(len(points)-2):
     x, y = points[i]
     dx = points[i+1][0] - points[i][0]
@@ -43,7 +43,7 @@ plot.arrow(x, y, dx, dy,length_includes_head=False, color='red', head_width=2)
 points = []
 for i in range(len(trajectory)):
     if i % 3 == 1:
-        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+        points.append((trajectory.loc[i]["x"], trajectory.loc[i]["y"]))
 for i in range(len(points)-2):
     x, y = points[i]
     dx = points[i+1][0] - points[i][0]
@@ -57,7 +57,7 @@ plot.arrow(x, y, dx, dy,length_includes_head=False, color='green', head_width=2)
 points = []
 for i in range(len(trajectory)):
     if i % 3 == 2:
-        points.append((trajectory.loc[i][1], trajectory.loc[i][2]))
+        points.append((trajectory.loc[i]["x"], trajectory.loc[i]["y"]))
 for i in range(len(points)-2):
     x, y = points[i]
     dx = points[i+1][0] - points[i][0]
