@@ -9,13 +9,13 @@ now = datetime.now()
 time_str = now.strftime("%Y_%m_%d_%H")
 
 # General Machine learning setting
-MAX_EPOCH = 2
+MAX_EPOCH = 50
 DEFAULT_BATCH_SIZE = 16
-PARTICIPANTS = 3
-DEFAULT_DATA_SET = "MNIST"
+PARTICIPANTS = 1
+DEFAULT_DATA_SET = "Pre-trained CIFAR-10"
 
 # Confined Gradient descent related setting
-CONFINED_INIT_UP_BOUND = 0.6
+CONFINED_INIT_UP_BOUND = 0.1
 CONFINED_INIT_LOW_BOUND = 0.0005
 ZERO_ANCHOR = "zeroes"
 RAND_ANCHOR = "uniform"

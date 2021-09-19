@@ -78,7 +78,7 @@ class ShallowCNN():
         self.model = None
         if mode == "MNIST":
             self.model = ModelMNIST()
-        elif mode == "CIFAR-10":
+        elif mode == "Pre-trained CIFAR-10":
             self.model = ModelPreTrainedCIFAR10()
         else:
             raise NotImplementedError("Unsupported data set")

@@ -1,7 +1,11 @@
 import torch
 import torchvision
+import numpy as np
 from constants import *
 
+PRE_TRAINED_CIFAR10_PATH = "./datasets/pretrained_cifar10/cifar100_resnet20_"
+TOTAL_PRE_TRAINED_SETS = 19
+SETS_ACQUIRED = 3
 
 class DataDistributor:
     """
@@ -36,11 +40,15 @@ class DataDistributor:
         elif data_set == "CIFAR-10":
             self.train_set = torchvision.datasets.CIFAR10(data_set_path, True, CIFAR_transform, download=True)
             self.test_set = torchvision.datasets.CIFAR10(data_set_path, False, MNIST_transform)
+        elif data_set == "Pre-trained CIFAR-10":
+            self.load_pre_trained_cifar10()
         else:
             raise NotImplementedError("Data set is not implemented yet")
         self.split_train = None
         self.split_test = None
         self.split_data(balanced)
+        print("Data loaded to distributor, {} train samples, {} test samples"
+              .format(len(self.train_set), len(self.test_set)))
 
     def split_data(self, balanced=True):
         """
@@ -96,3 +104,27 @@ class DataDistributor:
         if participant_number < 0 or participant_number >= self.number_of_participants:
             raise ValueError("Invalid participant number")
         return self.split_test[participant_number]
+
+    def load_pre_trained_cifar10(self):
+        """
+        Load pre-trained CIFAR10 according to the MNIST like format
+        """
+        sample_file_index = np.random.permutation(TOTAL_PRE_TRAINED_SETS)[:SETS_ACQUIRED]
+        test_paths = [PRE_TRAINED_CIFAR10_PATH + "test{}.csv".format(x) for x in sample_file_index]
+        train_paths = [PRE_TRAINED_CIFAR10_PATH + "train{}.csv".format(x) for x in sample_file_index]
+        test_samples = torch.tensor(np.vstack(
+            [np.genfromtxt(x, delimiter=',') for x in test_paths]
+        ))
+        train_samples = torch.tensor(np.vstack(
+            [np.genfromtxt(x, delimiter=',') for x in train_paths]
+        ))
+        test_features = test_samples[:, :-1]
+        test_features = test_features.float()
+        test_label = test_samples[:, -1]
+        test_label = test_label.long()
+        train_features = train_samples[:, :-1]
+        train_features = train_features.float()
+        train_label = train_samples[:, -1]
+        train_label = train_label.long()
+        self.test_set = [(test_features[i], test_label[i]) for i in range(len(test_label))]
+        self.train_set = [(train_features[i], train_label[i]) for i in range(len(train_label))]
