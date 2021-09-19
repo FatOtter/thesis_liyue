@@ -12,24 +12,24 @@ class ModelPreTrainedCIFAR10(torch.nn.Module):
     def __init__(self):
         super(ModelPreTrainedCIFAR10, self).__init__()
         self.input_layer = torch.nn.Sequential(
-            torch.nn.Linear(64, 128),
+            torch.nn.Linear(64, 1024),
             torch.nn.ReLU()
         )
-        self.hidden_layer = torch.nn.Sequential(
-            torch.nn.Linear(128, 512),
-            torch.nn.ReLU(),
-            torch.nn.Linear(512, 128),
-            torch.nn.ReLU()
-        )
+        # self.hidden_layer = torch.nn.Sequential(
+        #     torch.nn.Linear(128, 512),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Linear(512, 128),
+        #     torch.nn.ReLU()
+        # )
         self.output_layer = torch.nn.Sequential(
-            torch.nn.Linear(128, 64),
+            torch.nn.Linear(1024, 128),
             torch.nn.ReLU(),
-            torch.nn.Linear(64, 10)
+            torch.nn.Linear(128, 10)
         )
 
     def forward(self, x):
         out = self.input_layer(x)
-        out = self.hidden_layer(out)
+        # out = self.hidden_layer(out)
         out = self.output_layer(out)
         return out
 
@@ -270,7 +270,7 @@ class ShallowCNN():
         Calculate the gradients for a participant of confined gradient descent
         """
         cache = self.get_flatten_parameter()
-        self.normal_epoch(print_progress)
+        loss, acc = self.normal_epoch(print_progress)
         gradient = self.get_flatten_parameter() - cache
         if privacy_preserving:
             gradient, indices = self.select_by_threshold(gradient)
@@ -279,6 +279,7 @@ class ShallowCNN():
             self.aggregator.collect(gradient)
         if not gradient_applied:
             self.load_parameters(cache)
+        return loss, acc
 
     def confined_apply_gradient(self):
         """

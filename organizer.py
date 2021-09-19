@@ -3,6 +3,7 @@ from data_distributor import DataDistributor
 from visualizer import Visualizer
 from aggregator import Aggregator
 import pandas as pd
+import numpy as np
 from constants import *
 import torch
 
@@ -14,7 +15,7 @@ class PackageTester:
         for i in range(PARTICIPANTS):
             self.models.append(ShallowCNN())
             self.models[i].set_test_data(self.distributor.get_test_data(i))
-            self.models[i].set_training_data(self.distributor.get_train_data(i), batch_size=16)
+            self.models[i].set_training_data(self.distributor.get_train_data(i))
             # self.models[i].parameter_scale_down(0.1)
         self.visual = Visualizer(data=self.distributor.test_set)
         self.anchor = ShallowCNN()
@@ -24,11 +25,12 @@ class PackageTester:
         for i in range(MAX_EPOCH):
             print("Starting epoch {}...".format(i+1))
             for j in range(PARTICIPANTS):
-                print("Training participant {}, norm={}...".format(j+1, self.models[j].get_parameter_norm()))
+                print("Training participant {}, norm={}...".format(j+1, self.models[j].get_parameter_norm()), end="\t")
                 loss, acc = self.models[j].get_test_outcome(True)
                 print("Test loss: {}, test acc: {}".format(loss, acc))
                 self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j))
-                self.models[j].normal_epoch(True)
+                loss, acc = self.models[j].normal_epoch()
+                print("Train loss: {}, train acc: {}".format(loss, acc))
         for j in range(PARTICIPANTS):
             self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
         recorder.to_csv(RECORDING_PATH+"Parameters"+time_str+".csv")
@@ -56,18 +58,35 @@ class PackageTester:
         print("Confined initiation complete...")
         for i in range(MAX_EPOCH):
             print("Start confined training communication round {}...".format(i+1))
+            aggregated_loss = []
+            aggregated_acc = []
             for j in range(PARTICIPANTS):
-                print("Gradient calculating for Participant {}, norm={}...".format(j+1, self.models[j].get_parameter_norm()))
                 if j % RECORD_PER_N_PARTICIPANTS == 0:
                     print("Recording parameters for participant {}...".format(j+1))
                     self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
-                self.models[j].calc_local_gradient()
-            print("Accumulated gradient norm = {}".format(aggregator.get_outcome().norm()))
+                print("Gradient calculating for Participant {}, norm={}..."
+                      .format(j+1, self.models[j].get_parameter_norm()), end="\t")
+                loss, acc = self.models[j].calc_local_gradient()
+                aggregated_loss.append(loss)
+                aggregated_acc.append(acc)
+                print("Train loss = {}, train acc = {}".format(loss, acc))
+            avg_train_loss, avg_train_acc = np.average(aggregated_loss), np.average(aggregated_acc)
+            print("Accumulated gradient norm = {}, average train loss = {}, average train acc = {}"
+                  .format(aggregator.get_outcome().norm(), avg_train_loss, avg_train_acc))
+            aggregated_loss = []
+            aggregated_acc = []
             for j in range(PARTICIPANTS):
                 self.models[j].confined_apply_gradient()
                 loss, acc = self.models[j].get_test_outcome(True)
+                aggregated_loss.append(loss)
+                aggregated_acc.append(acc)
                 print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, loss, acc))
                 acc_recorder.loc[len(acc_recorder)] = (i, j, loss, acc)
+            avg_test_loss, avg_test_acc = np.average(aggregated_loss), np.average(aggregated_acc)
+            loss_diff = avg_train_loss - avg_test_loss
+            acc_diff = avg_train_acc - avg_test_acc
+            print("Average test loss = {}, diff = {}, average test acc = {}, diff = {}"
+                  .format(avg_test_loss, loss_diff, avg_test_acc, acc_diff))
             aggregator.reset()
         for j in range(PARTICIPANTS):
             if j % RECORD_PER_N_PARTICIPANTS == 0:
