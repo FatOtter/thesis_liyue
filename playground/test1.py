@@ -1,5 +1,6 @@
-import torch as t
-import time
+import numpy as np
 
-for i in range(10):
-    print("\rThe current number is {}".format(i), end="")
+sample = np.vstack(np.genfromtxt("../datasets/pretrained_cifar10/cifar100_resnet20_train.csv", delimiter=','))
+print(sample.shape)
+
+

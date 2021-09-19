@@ -5,36 +5,46 @@ from constants import *
 from aggregator import Aggregator
 
 
-class ShallowCNN(torch.nn.Module):
+class ModelPreTrainedCIFAR10(torch.nn.Module):
     """
-    The module used for verification, currently only support MNIST data set
+    The model designed for CIFAR-10 pre-trained data
     """
-    def __init__(self, mode=DEFAULT_DATA_SET):
-        super(ShallowCNN, self).__init__()
-        if mode == "MNIST":
-            self.conv1 = torch.nn.Sequential(
+    def __init__(self):
+        super(ModelPreTrainedCIFAR10, self).__init__()
+        self.input_layer = torch.nn.Sequential(
+            torch.nn.Linear(64, 128),
+            torch.nn.ReLU()
+        )
+        self.hidden_layer = torch.nn.Sequential(
+            torch.nn.Linear(128, 512),
+            torch.nn.ReLU(),
+            torch.nn.Linear(512, 128),
+            torch.nn.ReLU()
+        )
+        self.output_layer = torch.nn.Sequential(
+            torch.nn.Linear(128, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 10)
+        )
+
+    def forward(self, x):
+        out = self.input_layer(x)
+        out = self.hidden_layer(out)
+        out = self.output_layer(out)
+        return out
+
+
+class ModelMNIST(torch.nn.Module):
+    """
+    The model designed for MNIST data
+    """
+    def __init__(self):
+        super(ModelMNIST, self).__init__()
+        self.conv1 = torch.nn.Sequential(
                 torch.nn.Conv2d(1,8,3,1,1),
                 torch.nn.ReLU(),
                 torch.nn.MaxPool2d(2)
             )
-            self.dense = torch.nn.Sequential(
-                torch.nn.Linear(16 * 3 * 3, 64),
-                torch.nn.ReLU(),
-                torch.nn.Linear(64, 10)
-            )
-        elif mode == "CIFAR-10":
-            self.conv1 = torch.nn.Sequential(
-                torch.nn.Conv2d(3,8,3,1,1),
-                torch.nn.ReLU(),
-                torch.nn.MaxPool2d(2)
-            )
-            self.dense = torch.nn.Sequential(
-                torch.nn.Linear(16 * 4 * 4, 64),
-                torch.nn.ReLU(),
-                torch.nn.Linear(64, 10)
-            )
-        else:
-            raise NotImplementedError("Unsupported data set")
         self.conv2 = torch.nn.Sequential(
             torch.nn.Conv2d(8, 32, 3, 1, 1),
             torch.nn.ReLU(),
@@ -45,16 +55,11 @@ class ShallowCNN(torch.nn.Module):
             torch.nn.ReLU(),
             torch.nn.MaxPool2d(2)
         )
-
-        self.loss_function = torch.nn.CrossEntropyLoss()
-        self.optimizer = torch.optim.Adam(self.parameters())
-        self.test_data = None
-        self.test_data_length = 0
-        self.train_data = None
-        self.train_data_length = 0
-        self.aggregator = None
-        self.threshold_fraction = THRESHOLD_FRACTION
-        self.selection_rate = SELECTION_RATE
+        self.dense = torch.nn.Sequential(
+            torch.nn.Linear(16 * 3 * 3, 64),
+            torch.nn.ReLU(),
+            torch.nn.Linear(64, 10)
+        )
 
     def forward(self, x):
         conv1_out = self.conv1(x)
@@ -64,6 +69,30 @@ class ShallowCNN(torch.nn.Module):
         out = self.dense(res)
         return out
 
+
+class ShallowCNN():
+    """
+    The module used for verification, currently only support MNIST data set
+    """
+    def __init__(self, mode=DEFAULT_DATA_SET):
+        self.model = None
+        if mode == "MNIST":
+            self.model = ModelMNIST()
+        elif mode == "CIFAR-10":
+            self.model = ModelPreTrainedCIFAR10()
+        else:
+            raise NotImplementedError("Unsupported data set")
+        # print(self.model)
+        self.loss_function = torch.nn.CrossEntropyLoss()
+        self.optimizer = torch.optim.Adam(self.model.parameters())
+        self.test_data = None
+        self.test_data_length = 0
+        self.train_data = None
+        self.train_data_length = 0
+        self.aggregator = None
+        self.threshold_fraction = THRESHOLD_FRACTION
+        self.selection_rate = SELECTION_RATE
+
     def write_parameters(self, data_frame: pd.DataFrame, column):
         """
         Write the parameters of the current model into the defined column of given DataFrame
@@ -72,7 +101,7 @@ class ShallowCNN(torch.nn.Module):
         :return: A DataFrame with parameters in the given column
         """
         all_param = torch.empty(1)
-        for param in self.parameters():
+        for param in self.model.parameters():
             param = param.flatten()
             all_param = torch.cat([all_param, param])
         data_frame[column] = all_param[1:].detach().numpy()
@@ -89,7 +118,7 @@ class ShallowCNN(torch.nn.Module):
         if isinstance(data, pd.DataFrame):
             data = data[column].to_numpy()
             data = torch.tensor(data)
-        for param in self.parameters():
+        for param in self.model.parameters():
             length = len(param.flatten())
             to_load = data[start_index:start_index+length]
             to_load = to_load.reshape(param.size())
@@ -131,7 +160,7 @@ class ShallowCNN(torch.nn.Module):
         test_acc = 0
         for batch_x, batch_y in self.test_data:
             with torch.no_grad():
-                out = self(batch_x)
+                out = self.model(batch_x)
             batch_loss = self.loss_function(out, batch_y)
             test_loss += batch_loss.item()
             if calc_acc:
@@ -161,7 +190,7 @@ class ShallowCNN(torch.nn.Module):
             if print_progress and batch_counter % 100 == 0:
                 print("Currently training for batch {}, overall {} batches".format(batch_counter, overall_batches))
             batch_counter += 1
-            out = self(batch_x)
+            out = self.model(batch_x)
             batch_loss = self.loss_function(out, batch_y)
             train_loss += batch_loss.item()
             prediction = torch.max(out, 1).indices
@@ -181,7 +210,7 @@ class ShallowCNN(torch.nn.Module):
         Get the fallen parameters as a tensor
         """
         flatten = torch.empty(1)
-        for param in self.parameters():
+        for param in self.model.parameters():
             flatten = torch.cat([flatten, param.flatten()])
         return flatten[1:]
 
@@ -198,12 +227,12 @@ class ShallowCNN(torch.nn.Module):
         :param scale: the rate to scale
         :return: None
         """
-        for param in self.parameters():
+        for param in self.model.parameters():
             temp = scale * param
             with torch.no_grad():
                 param.copy_(temp)
 
-    def confined_init(self, anchor: torch.nn.Module,
+    def confined_init(self, anchor,
                       aggregator: Aggregator,
                       up_bound=CONFINED_INIT_UP_BOUND,
                       lower_bound=CONFINED_INIT_LOW_BOUND):
@@ -216,10 +245,10 @@ class ShallowCNN(torch.nn.Module):
         :return: None
         """
         self.aggregator = aggregator
-        anchors = anchor.parameters()
+        anchors = anchor.model.parameters()
         delta = torch.rand(1) * (up_bound - lower_bound) + lower_bound
         # print("Delta = {}, count of samples= {}".format(delta.item(), len(self.train_data)+len(self.test_data)))
-        for param in self.parameters():
+        for param in self.model.parameters():
             anchor_vec = next(anchors)
             random_vec = anchor_vec + delta * torch.rand(anchor_vec.size())
             random_vec = random_vec * torch.linalg.norm(anchor_vec) / torch.linalg.norm(random_vec)
@@ -228,6 +257,9 @@ class ShallowCNN(torch.nn.Module):
         return delta.item(), len(self.train_data)+len(self.test_data)
 
     def random_init(self, random_type=NORMAL_ANCHOR):
+        """
+        Initiate the current model with random parameter values
+        """
         init_dict = {ZERO_ANCHOR: torch.zeros(self.get_flatten_parameter().size()),
                      RAND_ANCHOR: torch.rand(self.get_flatten_parameter().size()),
                      NORMAL_ANCHOR: torch.randn(self.get_flatten_parameter().size())}

@@ -17,7 +17,7 @@ class Visualizer:
         """
         # The temp model used to calculate the loss value
         self.temp_model = ShallowCNN()
-        self.optimizer = torch.optim.Adam(self.temp_model.parameters())
+        self.optimizer = torch.optim.Adam(self.temp_model.model.parameters())
         self.loss_func = torch.nn.CrossEntropyLoss()
 
         # The random vectors used to generate plots
@@ -83,9 +83,9 @@ class Visualizer:
         # Iterate to sampling over the two points
         for i in range(low_bound, up_bound):
             alpha = i / resolution
-            vec1 = self.random_vec1.parameters()
-            vec2 = self.random_vec2.parameters()
-            for param in self.temp_model.parameters():
+            vec1 = self.random_vec1.model.parameters()
+            vec2 = self.random_vec2.model.parameters()
+            for param in self.temp_model.model.parameters():
                 target = alpha * next(vec1) + (1 - alpha) * next(vec2)
                 if filter_normalization:
                     target = target * torch.linalg.norm(param) / torch.linalg.norm(target)
@@ -161,8 +161,8 @@ class Visualizer:
             for beta in range(self.height):
                 alpha_factor = (alpha - self.width/2)/(self.width/self.scale)
                 beta_factor = (beta - self.height/2)/(self.height/self.scale)
-                param1 = self.random_vec1.parameters()
-                param2 = self.random_vec2.parameters()
+                param1 = self.random_vec1.model.parameters()
+                param2 = self.random_vec2.model.parameters()
                 anchor_params = self.anchor.parameters()
 
                 # Call the helper function to load parameters
@@ -200,7 +200,7 @@ class Visualizer:
         with given alpha and beta.
         Instruction of parameters in above loss_landscape function
         """
-        for param in self.temp_model.parameters():
+        for param in self.temp_model.model.parameters():
             anchor_param = next(anchor_params)
             # Check if make difference with anchor
             if anchor_difference:
@@ -266,7 +266,7 @@ class Visualizer:
         direction = torch.empty(1)
         anchor = self.anchor.parameters()
         with torch.no_grad():
-            for param in module.parameters():
+            for param in module.model.parameters():
                 anchor_param = next(anchor)
                 if minus_anchor:
                     param = param - anchor_param
@@ -315,8 +315,8 @@ class Visualizer:
         alpha_factor = (alpha - self.width / 2) / (self.width / self.scale)
         beta_factor = (beta - self.height / 2) / (self.height / self.scale)
         print("Alpha factor = {}, Beta factor = {}".format(alpha_factor, beta_factor))
-        param1 = self.random_vec1.parameters()
-        param2 = self.random_vec2.parameters()
+        param1 = self.random_vec1.model.parameters()
+        param2 = self.random_vec2.model.parameters()
         anchor_params = self.anchor.parameters()
         self._load_parameters_to_temp(alpha_factor, beta_factor, anchor_params, param1, param2,
                                       anchor_difference, filter_normalization)

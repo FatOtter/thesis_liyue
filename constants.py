@@ -9,7 +9,7 @@ now = datetime.now()
 time_str = now.strftime("%Y_%m_%d_%H")
 
 # General Machine learning setting
-MAX_EPOCH = 100
+MAX_EPOCH = 2
 DEFAULT_BATCH_SIZE = 16
 PARTICIPANTS = 3
 DEFAULT_DATA_SET = "MNIST"
