@@ -37,7 +37,7 @@ class PackageTester:
         print("Training complete...")
 
     def confined_train(self, anchor_type=NORMAL_ANCHOR):
-        recorder = pd.DataFrame()
+        param_recorder = pd.DataFrame()
         acc_recorder = pd.DataFrame(columns=["communication_round", "participant", "loss", "acc"])
         anchor = self.anchor
         # to_load = pd.read_csv("anchor.csv")
@@ -54,7 +54,7 @@ class PackageTester:
                   .format(i+1, delta, lth, loss, acc))
             if i % RECORD_PER_N_PARTICIPANTS == 0:
                 # print("Recording parameters for participant {}...".format(j + 1))
-                self.models[i].write_parameters(recorder, "epoch{}_participant{}".format(0, i + 1))
+                self.models[i].write_parameters(param_recorder, "epoch{}_participant{}".format(0, i + 1))
         print("Confined initiation complete...")
         for i in range(MAX_EPOCH):
             print("Start confined training communication round {}...".format(i+1))
@@ -63,7 +63,7 @@ class PackageTester:
             for j in range(PARTICIPANTS):
                 if j % RECORD_PER_N_PARTICIPANTS == 0:
                     print("Recording parameters for participant {}...".format(j+1))
-                    self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(i, j+1))
+                    self.models[j].write_parameters(param_recorder, "epoch{}_participant{}".format(i, j+1))
                 print("Gradient calculating for Participant {}, norm={}..."
                       .format(j+1, self.models[j].get_parameter_norm()), end="\t")
                 loss, acc = self.models[j].calc_local_gradient()
@@ -91,8 +91,8 @@ class PackageTester:
         for j in range(PARTICIPANTS):
             if j % RECORD_PER_N_PARTICIPANTS == 0:
                 print("Recording parameters for participant {}...".format(j+1))
-                self.models[j].write_parameters(recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
-        recorder.to_csv(RECORDING_PATH+"Confined_parameters"+time_str+".csv")
+                self.models[j].write_parameters(param_recorder, "epoch{}_participant{}".format(MAX_EPOCH, j))
+        param_recorder.to_csv(RECORDING_PATH+"Confined_parameters"+time_str+".csv")
         acc_recorder.to_csv(RECORDING_PATH+"Confined_acc"+time_str+".csv")
         print("Training complete...")
 
