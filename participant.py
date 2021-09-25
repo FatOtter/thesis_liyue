@@ -12,24 +12,22 @@ class ModelPreTrainedCIFAR10(torch.nn.Module):
     def __init__(self):
         super(ModelPreTrainedCIFAR10, self).__init__()
         self.input_layer = torch.nn.Sequential(
-            torch.nn.Linear(64, 1024),
+            torch.nn.Linear(64, 128),
             torch.nn.ReLU()
         )
-        # self.hidden_layer = torch.nn.Sequential(
-        #     torch.nn.Linear(128, 512),
-        #     torch.nn.ReLU(),
-        #     torch.nn.Linear(512, 128),
-        #     torch.nn.ReLU()
-        # )
+        self.hidden_layer = torch.nn.Sequential(
+            torch.nn.Linear(128, 256),
+            torch.nn.ReLU(),
+        )
         self.output_layer = torch.nn.Sequential(
-            torch.nn.Linear(1024, 128),
+            torch.nn.Linear(256, 128),
             torch.nn.ReLU(),
             torch.nn.Linear(128, 10)
         )
 
     def forward(self, x):
         out = self.input_layer(x)
-        # out = self.hidden_layer(out)
+        out = self.hidden_layer(out)
         out = self.output_layer(out)
         return out
 
