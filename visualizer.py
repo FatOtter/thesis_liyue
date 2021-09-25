@@ -50,7 +50,7 @@ class Visualizer:
         self.loss_map = {'alpha': [], 'beta': [], 'loss': [], 'x': [], 'y': []}
 
     def Goodfellow_approach(self, theta1=None, theta2=None, scale=1.2, filter_normalization=False, resolution=100,
-                            print_progress=False):
+                            print_progress=True):
         """
         Generate the loss landscape cross-section using Goodfellow's approach, with filter normalization function
         recommended by Tom Goldstein's team
@@ -68,11 +68,15 @@ class Visualizer:
                 self.random_vec1 = theta1
             else:
                 raise TypeError("Theta1 is not a valid instance of model")
+        else:
+            self.random_vec1.random_init()
         if theta2 is not None:
             if isinstance(theta2, ShallowCNN):
                 self.random_vec2 = theta2
             else:
                 raise TypeError("Theta2 is not a valid instance of model")
+        else:
+            self.random_vec2.random_init()
         self.clear_loss_map()
 
         # Set up bounds for iterator
@@ -163,7 +167,7 @@ class Visualizer:
                 beta_factor = (beta - self.height/2)/(self.height/self.scale)
                 param1 = self.random_vec1.model.parameters()
                 param2 = self.random_vec2.model.parameters()
-                anchor_params = self.anchor.parameters()
+                anchor_params = self.anchor.model.parameters()
 
                 # Call the helper function to load parameters
                 self._load_parameters_to_temp(alpha_factor, beta_factor, anchor_params, param1, param2,

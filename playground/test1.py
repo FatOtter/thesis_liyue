@@ -9,24 +9,11 @@ import matplotlib.pyplot as plot
 #     [np.genfromtxt(x, delimiter=',') for x in paths]
 # )
 # print(samples.shape)
-path = "./records/Confined_acc2021_09_17_16.csv"
+path = "./records/Goodfellow2021_09_25_15.csv"
 raw = np.genfromtxt(path, delimiter=",")
 raw = raw[1:]
-# print(raw)
-x1 = raw[::3, 4]
-x2 = raw[1::3, 4]
-x3 = raw[2::3, 4]
-l1 = raw[::3, 3]
-l2 = raw[1::3, 3]
-l3 = raw[2::3, 3]
-l1 = l1.clip(0,20)
-l2 = l2.clip(0,20)
-l3 = l3.clip(0,20)
-fig, axs = plot.subplots(2)
-axs[0].plot(x1, color="red")
-axs[0].plot(x2, color="blue")
-axs[0].plot(x3, color="green")
-axs[1].plot(l1, color="red")
-axs[1].plot(l2, color="blue")
-axs[1].plot(l2, color="green")
+print(raw)
+plot.plot(raw[:, 1], raw[:, 2])
+plot.xlabel("Alpha")
+plot.ylabel("loss")
 plot.show()

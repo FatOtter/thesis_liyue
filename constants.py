@@ -4,12 +4,12 @@ from datetime import datetime
 RECORDING_PATH = "./playground/records/"
 DATA_SET_PATH = "datasets"
 PARAMETER_FILE = "anchor.csv"
-RECORD_PER_N_PARTICIPANTS = 10
+RECORD_PER_N_PARTICIPANTS = 4
 now = datetime.now()
 time_str = now.strftime("%Y_%m_%d_%H")
 
 # General Machine learning setting
-MAX_EPOCH = 100
+MAX_EPOCH = 1000
 DEFAULT_BATCH_SIZE = 16
 PARTICIPANTS = 10
 DEFAULT_DATA_SET = "Pre-trained CIFAR-10"

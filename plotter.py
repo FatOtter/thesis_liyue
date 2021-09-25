@@ -76,8 +76,8 @@ class ThesisPlotter:
         plot.show()
 
 if __name__ == '__main__':
-    plotter = ThesisPlotter("./playground/records/Landscape2021_09_18_03.csv",
-                            "./playground/records/Trajectory2021_09_18_03.csv")
+    plotter = ThesisPlotter("./playground/records/Landscape2021_09_25_13.csv",
+                            "./playground/records/Trajectory2021_09_25_13.csv")
     # plotter.loss_contour()
     # plotter.contour_trajectory(3)
     plotter.loss_surface(3, True)
