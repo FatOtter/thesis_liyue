@@ -194,4 +194,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train(record_param=False)
+    test.confined_train(anchor_type=ZERO_ANCHOR, record_param=False)
