@@ -36,7 +36,7 @@ class PackageTester:
         recorder.to_csv(RECORDING_PATH+"Parameters"+time_str+".csv")
         print("Training complete...")
 
-    def confined_train(self, anchor_type=NORMAL_ANCHOR, record_param=True):
+    def confined_train(self, anchor_type=NORMAL_ANCHOR, record_param=True, anchor_scale_down=1.0):
         param_recorder = pd.DataFrame()
         acc_recorder = pd.DataFrame(columns=["communication_round", "participant", "train_loss", "train_acc",
                                              "test_loss", "test_acc"])
@@ -46,6 +46,7 @@ class PackageTester:
                             RAND_ANCHOR: torch.rand(anchor.get_flatten_parameter().size()),
                             NORMAL_ANCHOR: torch.randn(anchor.get_flatten_parameter().size())}
         anchor.load_parameters(anchor_init_dict[anchor_type])
+        anchor.parameter_scale_down(anchor_scale_down)
         aggregator = Aggregator(anchor.get_flatten_parameter())
         print("Start confined initiation...")
         for i in range(PARTICIPANTS):
@@ -163,14 +164,16 @@ class PackageTester:
         visual.loss_landscape(scale=2, width=10, height=10).to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
 
-    def landscape_pca(self):
+    def landscape_pca(self, path):
         visual = self.visual
-        to_load = pd.read_csv("./playground/records/Confined_parameters2021_09_25_12.csv")
+        to_load = pd.read_csv(path)
         visual.init_pca(to_load, save_coords=True
 
                         )
+        # set zero point as anchor
+        # self.anchor.load_parameters(torch.zeros(self.anchor.get_flatten_parameter().size()))
         print("Trajectory loaded for PCA...")
-        visual.loss_landscape(scale=1.5, width=80, height=80,
+        visual.loss_landscape(scale=5, width=100, height=100,
                               anchor_difference=False, direction_vec_normalization=True)\
             .to_csv(RECORDING_PATH+"Landscape"+time_str+".csv")
         print("Loss landscape generated...")
@@ -194,4 +197,6 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train(anchor_type=ZERO_ANCHOR, record_param=False)
+    test.landscape_pca(path=RECORDING_PATH+"combined_random_init_mnist.csv")
+
+

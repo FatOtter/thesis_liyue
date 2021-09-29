@@ -1,19 +1,18 @@
 import numpy as np
-import matplotlib.pyplot as plot
+import pandas as pd
+import participant
 
-# PRE_TRAINED_CIFAR10_PATH = "../datasets/pretrained_cifar10/cifar100_resnet20_"
-# indices = np.random.permutation(19)[:3]
-# paths = [PRE_TRAINED_CIFAR10_PATH+"test{}.csv".format(x) for x in indices]
-# print(paths)
-# samples = np.vstack(
-#     [np.genfromtxt(x, delimiter=',') for x in paths]
-# )
-# print(samples.shape)
-path = "./records/Goodfellow2021_09_25_15.csv"
-raw = np.genfromtxt(path, delimiter=",")
-raw = raw[1:]
-print(raw)
-plot.plot(raw[:, 1], raw[:, 2])
-plot.xlabel("Alpha")
-plot.ylabel("loss")
-plot.show()
+zero1 = np.genfromtxt("./records/Confined_parameters2021_09_28_09MR_1.csv", delimiter=",")
+zero2 = np.genfromtxt("./records/Confined_parameters2021_09_28_10MR_2.csv", delimiter=",")
+zero3 = np.genfromtxt("./records/Confined_parameters2021_09_28_11MR_3.csv", delimiter=",")
+zero4 = np.genfromtxt("./records/Confined_parameters2021_09_28_12MR_4.csv", delimiter=",")
+
+print(zero1.shape)
+combined = np.hstack([zero1[1:, 1::3], zero2[1:, 1::3], zero3[1:, 1::3], zero4[1:, 1::3]])
+print(combined.shape)
+# avg = np.average(combined, axis=1)
+# avg = avg.reshape(16970, 1)
+# print(avg.shape)
+# combined = np.hstack([combined, avg])
+df = pd.DataFrame(combined, index=None)
+df.to_csv("./records/combined_random_init_mnist.csv")

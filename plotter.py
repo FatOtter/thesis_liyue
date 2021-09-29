@@ -3,7 +3,8 @@ import pandas as pd
 import numpy as np
 
 MNIST_CONTOUR_ARRAY = [2**x/100 for x in range(15)]
-COLORS = ["red", "green", "blue", "yellow", "black", "purple"]
+MNIST_ZERO_INIT_ARRAY = [2**x/10000 for x in range(15)]
+COLORS = ["red", "green", "blue", "purple", "yellow"]
 
 
 class ThesisPlotter:
@@ -21,7 +22,7 @@ class ThesisPlotter:
         x = x.reshape(resolution, resolution)
         y = y.reshape(resolution, resolution)
         z = z.reshape(resolution, resolution)
-        plot.contour(x, y, z, MNIST_CONTOUR_ARRAY, linewidths=0.5)
+        plot.contour(x, y, z, 20, linewidths=0.5)
         color_bar = plot.colorbar(format="%.3f")
 
     def contour_trajectory(self, participant_count):
@@ -29,7 +30,8 @@ class ThesisPlotter:
         for i in range(len(self.trajectory)):
             points.append((self.trajectory.loc[i]["x"], self.trajectory.loc[i]["y"]))
         for j in range(participant_count):
-            samples = points[j::participant_count]
+            # samples = points[j::participant_count]
+            samples = points[j*51:(j+1)*51]
             for i in range(len(samples) - 2):
                 x, y = samples[i]
                 dx = samples[i + 1][0] - samples[i][0]
@@ -76,9 +78,9 @@ class ThesisPlotter:
         plot.show()
 
 if __name__ == '__main__':
-    plotter = ThesisPlotter("./playground/records/Landscape2021_09_25_13.csv",
-                            "./playground/records/Trajectory2021_09_25_13.csv")
-    # plotter.loss_contour()
-    # plotter.contour_trajectory(3)
-    plotter.loss_surface(3, True)
+    plotter = ThesisPlotter("./playground/records/Landscape2021_09_28_23.csv",
+                            "./playground/records/Trajectory2021_09_28_23.csv")
+    plotter.loss_contour()
+    plotter.contour_trajectory(4)
+    # plotter.loss_surface()
     plotter.show()
