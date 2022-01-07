@@ -287,7 +287,7 @@ class ShallowCNN():
         for param in self.model.parameters():
             anchor_vec = next(anchors)
             random_vec = anchor_vec + delta * torch.rand(anchor_vec.size())
-            random_vec = random_vec * torch.linalg.norm(anchor_vec) / torch.linalg.norm(random_vec)
+            # random_vec = random_vec * torch.linalg.norm(anchor_vec) / torch.linalg.norm(random_vec)
             with torch.no_grad():
                 param.copy_(random_vec)
         return delta.item(), len(self.train_data)+len(self.test_data)
