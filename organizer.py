@@ -14,7 +14,7 @@ class PackageTester:
         self.models = []
         for i in range(PARTICIPANTS):
             self.models.append(ShallowCNN())
-            self.models[i].set_test_data(self.distributor.get_test_data(i))
+            self.models[i].set_test_data(self.distributor.test_set)
             self.models[i].set_training_data(self.distributor.get_train_data(i))
             # self.models[i].parameter_scale_down(0.1)
         self.visual = Visualizer(data=self.distributor.test_set)
@@ -50,9 +50,9 @@ class PackageTester:
         print("Start confined initiation...")
         for i in range(PARTICIPANTS):
             delta, lth = self.models[i].confined_init(anchor, aggregator)
-            loss, acc = self.models[i].get_test_outcome(True)
-            print("Participant {} has been initialized, delta={}, batches allocated={}, initial loss={}, initial acc={}"
-                  .format(i+1, delta, lth, loss, acc))
+            if i % PRINT_PER_N_PARTICIPANTS == 0:
+                loss, acc = self.models[i].get_test_outcome(True)
+                print("Participant {} has been initialized, delta={}, batches allocated={}, initial loss={}, initial acc={}".format(i+1, delta, lth, loss, acc))
             if i % RECORD_PER_N_PARTICIPANTS == 0 and record_param:
                 # print("Recording parameters for participant {}...".format(j + 1))
                 self.models[i].write_parameters(param_recorder, "epoch{}_participant{}".format(0, i + 1))
@@ -66,12 +66,14 @@ class PackageTester:
                 if j % RECORD_PER_N_PARTICIPANTS == 0 and record_param:
                     print("Recording parameters for participant {}...".format(j+1))
                     self.models[j].write_parameters(param_recorder, "epoch{}_participant{}".format(i, j+1))
-                print("Gradient calculating for Participant {}, norm={}..."
-                      .format(j+1, self.models[j].get_parameter_norm()), end="\t")
+                if j % PRINT_PER_N_PARTICIPANTS == 0:
+                    print("Gradient calculating for Participant {}, norm={}..."
+                          .format(j+1, self.models[j].get_parameter_norm()), end="\t")
                 train_loss, train_acc = self.models[j].calc_local_gradient()
                 aggregated_loss.append(train_loss)
                 aggregated_acc.append(train_acc)
-                print("Train loss = {}, train acc = {}".format(train_loss, train_acc))
+                if j % PRINT_PER_N_PARTICIPANTS == 0:
+                    print("Train loss = {}, train acc = {}".format(train_loss, train_acc))
             avg_train_loss, avg_train_acc = np.average(aggregated_loss), np.average(aggregated_acc)
             print("Accumulated gradient norm = {}, average train loss = {}, average train acc = {}"
                   .format(aggregator.get_outcome().norm(), avg_train_loss, avg_train_acc))
@@ -79,16 +81,19 @@ class PackageTester:
             aggregated_acc = []
             for j in range(PARTICIPANTS):
                 self.models[j].confined_apply_gradient()
-                test_loss, test_acc = self.models[j].get_test_outcome(True)
-                aggregated_loss.append(test_loss)
-                aggregated_acc.append(test_acc)
-                print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, test_loss, test_acc))
-                acc_recorder.loc[len(acc_recorder)] = (i, j, train_loss, train_acc, test_loss, test_acc)
-            avg_test_loss, avg_test_acc = np.average(aggregated_loss), np.average(aggregated_acc)
-            loss_diff = avg_train_loss - avg_test_loss
-            acc_diff = avg_train_acc - avg_test_acc
-            print("Average test loss = {}, diff = {}, average test acc = {}, diff = {}"
-                  .format(avg_test_loss, loss_diff, avg_test_acc, acc_diff))
+                if i % TEST_PER_N_BATCH == 0 and j % PRINT_PER_N_PARTICIPANTS == 0:
+                    test_loss, test_acc = self.models[j].get_test_outcome(True)
+                    aggregated_loss.append(test_loss)
+                    aggregated_acc.append(test_acc)
+                    print("Gradient applied for participant {}, Test loss: {}, test acc: {}".format(j+1, test_loss,
+                                                                                                    test_acc))
+                    acc_recorder.loc[len(acc_recorder)] = (i, j, train_loss, train_acc, test_loss, test_acc)
+            if i % TEST_PER_N_BATCH == 0:
+                avg_test_loss, avg_test_acc = np.average(aggregated_loss), np.average(aggregated_acc)
+                loss_diff = avg_train_loss - avg_test_loss
+                acc_diff = avg_train_acc - avg_test_acc
+                print("Average test loss = {}, diff = {}, average test acc = {}, diff = {}"
+                      .format(avg_test_loss, loss_diff, avg_test_acc, acc_diff))
             aggregator.reset()
         for j in range(PARTICIPANTS):
             if j % RECORD_PER_N_PARTICIPANTS == 0 and record_param:
@@ -165,7 +170,7 @@ class PackageTester:
 
     def landscape_pca(self):
         visual = self.visual
-        to_load = pd.read_csv("./playground/records/Confined_parameters2021_09_25_12.csv")
+        to_load = pd.read_csv("./playground/records/Federated_parameters2022_01_06_21.csv")
         visual.init_pca(to_load, save_coords=True
 
                         )
@@ -194,4 +199,4 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
-    test.confined_train(anchor_type=ZERO_ANCHOR, record_param=False)
+    test.landscape_pca()

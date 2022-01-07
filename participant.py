@@ -59,12 +59,28 @@ class ModelMNIST(torch.nn.Module):
             torch.nn.Linear(64, 10)
         )
 
+
+        # self.conv1 = torch.nn.Sequential(
+        #     torch.nn.Linear(28 * 28, 256),
+        #     torch.nn.ReLU()
+        # )
+        # self.dense = torch.nn.Sequential(
+        #     torch.nn.Linear(256, 64),
+        #     torch.nn.ReLU(),
+        #     torch.nn.Linear(64, 10),
+        #     torch.nn.Softmax(dim=1)
+        # )
+
     def forward(self, x):
         conv1_out = self.conv1(x)
         conv2_out = self.conv2(conv1_out)
         conv3_out = self.conv3(conv2_out)
         res = conv3_out.view(conv3_out.size(0), -1)
         out = self.dense(res)
+
+        # x = x.view(x.size(0), -1)
+        # z1 = self.conv1(x)
+        # out = self.dense(z1)
         return out
 
 
@@ -87,6 +103,7 @@ class ShallowCNN():
         self.test_data_length = 0
         self.train_data = None
         self.train_data_length = 0
+        self.train_data_iter = None
         self.aggregator = None
         self.threshold_fraction = THRESHOLD_FRACTION
         self.selection_rate = SELECTION_RATE
@@ -134,6 +151,7 @@ class ShallowCNN():
         """
         self.train_data = DataLoader(training_data, batch_size=batch_size, **kwargs)
         self.train_data_length = len(training_data)
+        self.train_data_iter = iter(self.train_data)
 
     def set_test_data(self, test_data, batch_size=DEFAULT_BATCH_SIZE, **kwargs):
         """
@@ -203,6 +221,26 @@ class ShallowCNN():
         train_loss = train_loss/self.train_data_length
         return train_loss, train_acc
 
+    def one_batch_forward(self):
+        """
+        Run training using one batch of training data
+        """
+        if self.test_data is None or self.train_data_iter is None:
+            raise TypeError("Training data not initialized")
+        batch = next(self.train_data_iter, None)
+        if batch is None:
+            self.train_data_iter = iter(self.train_data)
+            batch = next(self.train_data_iter, None)
+        batch_x, batch_y = batch
+        out = self.model(batch_x)
+        batch_loss = self.loss_function(out, batch_y)
+        prediction = torch.max(out, 1).indices
+        batch_acc = (prediction == batch_y).sum()
+        self.optimizer.zero_grad()
+        batch_loss.backward()
+        self.optimizer.step()
+        return batch_loss.item()/len(batch_y), batch_acc.item()/len(batch_y)
+
     def get_flatten_parameter(self):
         """
         Get the fallen parameters as a tensor
@@ -268,7 +306,7 @@ class ShallowCNN():
         Calculate the gradients for a participant of confined gradient descent
         """
         cache = self.get_flatten_parameter()
-        loss, acc = self.normal_epoch(print_progress)
+        loss, acc = self.normal_epoch()
         gradient = self.get_flatten_parameter() - cache
         if privacy_preserving:
             gradient, indices = self.select_by_threshold(gradient)
