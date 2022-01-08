@@ -170,10 +170,8 @@ class PackageTester:
 
     def landscape_pca(self):
         visual = self.visual
-        to_load = pd.read_csv("./playground/records/Federated_parameters2022_01_06_21.csv")
-        visual.init_pca(to_load, save_coords=True
-
-                        )
+        to_load = pd.read_csv("./playground/records/Confined_parameters2022_01_07_20.csv")
+        visual.init_pca(to_load, save_coords=True)
         print("Trajectory loaded for PCA...")
         visual.loss_landscape(scale=1.5, width=80, height=80,
                               anchor_difference=False, direction_vec_normalization=True)\
@@ -199,4 +197,5 @@ if __name__ == '__main__':
     device = torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
     print(device)
     test = PackageTester()
+    # test.confined_train(record_param=True)
     test.landscape_pca()
