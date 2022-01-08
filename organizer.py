@@ -170,7 +170,7 @@ class PackageTester:
 
     def landscape_pca(self):
         visual = self.visual
-        to_load = pd.read_csv("./playground/records/Federated_parameters2022_01_06_21.csv")
+        to_load = pd.read_csv("./playground/records/Federated_parameters2022_01_08_00.csv")
         visual.init_pca(to_load, save_coords=True
 
                         )

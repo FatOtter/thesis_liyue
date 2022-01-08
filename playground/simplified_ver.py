@@ -29,6 +29,6 @@ MNIST_transform = torchvision.transforms.Compose([
                 mean=[0.5, ],
                 std=[0.5, ])
         ])
-DATA_SET_PATH = "datasets"
+DATA_SET_PATH = "../datasets"
 train_set = torchvision.datasets.MNIST(DATA_SET_PATH, True, MNIST_transform, download=True)
 test_set = torchvision.datasets.MNIST(DATA_SET_PATH, False, MNIST_transform)

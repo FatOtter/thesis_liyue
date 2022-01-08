@@ -3,7 +3,7 @@ import torchvision
 import math
 from torch.utils.data.dataloader import DataLoader
 from playground.model_shallow_cnn import ShallowCNN
-from read_model_from_csv_test import ModelLoader
+from playground.read_model_from_csv_test import ModelLoader
 
 RECORDING_PATH = "../trainig_records/"
 EPOCH = 4
