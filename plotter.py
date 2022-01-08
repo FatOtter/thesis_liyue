@@ -23,7 +23,7 @@ class ThesisPlotter:
         z = z.reshape(resolution, resolution)
         plot.contour(x, y, z, MNIST_CONTOUR_ARRAY, linewidths=0.5)
         color_bar = plot.colorbar(format="%.3f")
-        plot.margins(x=-0.35, y=-0.4)
+        plot.margins(x=-0.3, y=-0.3)
 
     def contour_trajectory(self, participant_count, to_plot=None):
         points = []
@@ -81,9 +81,9 @@ class ThesisPlotter:
 
 
 if __name__ == '__main__':
-    plotter = ThesisPlotter("./playground/records/Landscape2022_01_08_01.csv",
-                            "./playground/records/Trajectory2022_01_08_01.csv")
+    plotter = ThesisPlotter("./playground/records/Landscape2022_01_08_00.csv",
+                            "./playground/records/Trajectory2022_01_08_00.csv")
     plotter.loss_contour()
-    plotter.contour_trajectory(5, [4])
+    plotter.contour_trajectory(3)
     # plotter.loss_surface(3, True)
     plotter.show("Traditional_FL.pdf")
