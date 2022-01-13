@@ -17,12 +17,12 @@ print("Initializing...")
 num_iter = 2000
 Pv = 4
 Ph = 10
-out_channel = 8
+out_channel = 256
 n_eopch = 100
 init_lambda = 0.1
 q = 0.1
 models = []
-batch = 2
+batch = 10
 cgd = CGD_torch(
     num_iter=num_iter,
     train_imgs=train_imgs,

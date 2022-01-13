@@ -13,19 +13,28 @@ class CGD_model(torch.nn.Module):
         self.Pv = Pv
         self.reso = reso
         self.out_channel = out_channel
+        # self.input = torch.nn.Sequential(
+        #     torch.nn.Conv2d(Pv ** 2, out_channel, 3, 1, 1),
+        #     torch.nn.ReLU(),
+        #     torch.nn.MaxPool2d(2)
+        # )
+        # self.hidden = torch.nn.Sequential(
+        #     torch.nn.Linear((reso//(Pv*2))**2 * out_channel, 10),
+        #     torch.nn.Softmax(dim=1)
+        # )
         self.input = torch.nn.Sequential(
-            torch.nn.Conv2d(Pv ** 2, out_channel, 3, 1, 1),
-            torch.nn.ReLU(),
-            torch.nn.MaxPool2d(2)
+            torch.nn.Linear(reso ** 2 // Pv, out_channel // Pv),
+            torch.nn.ReLU()
         )
         self.hidden = torch.nn.Sequential(
-            torch.nn.Linear((reso//(Pv*2))**2 * out_channel, 10),
-            torch.nn.Softmax(dim=1)
+            torch.nn.Linear(out_channel, 10)
         )
+
         self.optimizer = torch.optim.Adam(self.parameters())
 
     def forward(self, x):
-        x = x.view(x.size(0), self.Pv ** 2, self.reso // self.Pv, -1)
+        # x = x.view(x.size(0), self.Pv ** 2, self.reso // self.Pv, -1)
+        x = x.view(x.size(0), self.Pv, -1)
         h_input = self.input(x)
         h_input = h_input.view(x.size(0), -1)
         out = self.hidden(h_input)
@@ -236,7 +245,7 @@ class CGD_torch:
             collector = next(grad_iter, None)
             collector += grad
 
-    def grad_makeup(self, grad, norm_clip=True, noisy_update=False, sparsify_update=True):
+    def grad_makeup(self, grad, norm_clip=True, noisy_update=False, sparsify_update=False):
         with torch.no_grad():
             if norm_clip and grad.norm() > self.max_grad_norm:
                 grad = grad * self.max_grad_norm / grad.norm()
@@ -324,7 +333,7 @@ class CGD_torch:
                 batch_Y = self.train_labels[lower: upper]
                 batch_idx += 1
                 if accountant:
-                    drop_samples = torch.randint(low=0, high=batch_X.size(0), size=(3, ))
+                    drop_samples = torch.randint(low=0, high=batch_X.size(0), size=(8, ))
                     sample_grad = []
                     for sample_idx in drop_samples:
                         self.back_prop(batch_X, batch_Y, sample_idx)
