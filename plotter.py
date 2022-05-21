@@ -22,7 +22,7 @@ class ThesisPlotter:
         y = y.reshape(resolution, resolution)
         z = z.reshape(resolution, resolution)
         plot.contour(x, y, z, MNIST_CONTOUR_ARRAY, linewidths=0.5)
-        color_bar = plot.colorbar(format="%.3f")
+        # color_bar = plot.colorbar(format="%.3f")
         plot.margins(x=-0.3, y=-0.3)
 
     def contour_trajectory(self, participant_count, to_plot=None):
@@ -41,6 +41,10 @@ class ThesisPlotter:
                 dx = samples[-1][0] - samples[-2][0]
                 dy = samples[-1][1] - samples[-2][1]
                 plot.arrow(x, y, dx, dy, length_includes_head=False, color=COLORS[j], head_width=0.5)
+        plot.xlim(-15, 15)
+        plot.ylim(-15, 15)
+        plot.xticks([])
+        plot.yticks([])
 
     def loss_surface(self, participants_count=0, trajectory=False):
         x = self.loss_landscape["x"].to_numpy()
@@ -62,6 +66,7 @@ class ThesisPlotter:
             for i in range(participants_count):
                 ax.plot(xx[i::participants_count], yy[i::participants_count], zz[i::participants_count], "-", color=COLORS[i], alpha=0.5, zorder=2)
 
+
     def find_loss(self, point):
         x = self.loss_landscape["x"].to_numpy()
         y = self.loss_landscape["y"].to_numpy()
@@ -81,9 +86,9 @@ class ThesisPlotter:
 
 
 if __name__ == '__main__':
-    plotter = ThesisPlotter("./playground/records/Landscape2022_01_08_00.csv",
-                            "./playground/records/Trajectory2022_01_08_00.csv")
+    plotter = ThesisPlotter("./playground/records/Landscape2022_01_08_01.csv",
+                            "./playground/records/Trajectory2022_01_08_01.csv")
     plotter.loss_contour()
-    plotter.contour_trajectory(3)
+    plotter.contour_trajectory(4, [0])
     # plotter.loss_surface(3, True)
     plotter.show("Traditional_FL.pdf")
